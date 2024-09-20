@@ -82,9 +82,9 @@ public class ChessPiece {
         } else if (currentType == PieceType.KING) {
             moves.addAll(diagonal(board, row, col, color, currentType));
             moves.addAll(straight(board, row, col, color, currentType));
-        } /*else if (currentType == PieceType.KNIGHT) {
+        } else if (currentType == PieceType.KNIGHT) {
             moves = knightMove(board, row, col, color, currentType);
-        } else if (currentType == PieceType.PAWN) {
+        } /*else if (currentType == PieceType.PAWN) {
             moves = pawnMoves(board, row, col, color, currentType);
         } else {
             throw new IllegalArgumentException("Wrong piece_type: " + currentType);
@@ -141,6 +141,7 @@ public class ChessPiece {
 
         return valid_moves;
     }
+
     public static List<ChessMove> straight(ChessBoard chessBoard, int row, int col, ChessGame.TeamColor currentColor, PieceType currentType) {
         ChessPosition s_Position = new ChessPosition(row, col);
         List<ChessMove> valid_moves = new ArrayList<>();
@@ -184,4 +185,42 @@ public class ChessPiece {
 
         return valid_moves;
     }
+
+    public static List<ChessMove> knightMove(ChessBoard chessBoard, int row, int col, ChessGame.TeamColor currentColor, PieceType currentType) {
+        ChessPosition s_Position = new ChessPosition(row, col);
+        List<ChessMove> valid_moves = new ArrayList<>();
+        int[][] directions = {
+                {2, 1}, {2, -1}, {-2, 1}, {-2, -1},
+                {1, 2}, {1, -2}, {-1, 2}, {-1, -2}
+        };
+
+        for (int[] direction : directions) {
+            int newRow = row + direction[0];
+            int newCol = col + direction[1];
+
+            // Check if the new position is within the bounds of the board
+            if (newRow >= 1 && newRow <= 8 && newCol >= 1 && newCol <= 8) {
+                ChessPosition newPos = new ChessPosition(newRow, newCol);
+                ChessPiece pieceAtPos = chessBoard.getPiece(newPos);
+
+                // Stop if there is a piece of the same color or capture if opponent's piece
+                if (pieceAtPos != null) {
+                    if (pieceAtPos.getTeamColor() == currentColor) {
+                        break;  // Stop if it's our own piece
+                    } else {
+                        valid_moves.add(new ChessMove(s_Position, newPos, null));  // Capture opponent's piece
+                        break;  // And then stop
+                    }
+                }
+
+                // Add the move as it's valid and continue
+                valid_moves.add(new ChessMove(s_Position, newPos, null));
+
+                if (currentType == PieceType.KING) {
+                    break;
+                }
+            }
+        }
+        return valid_moves;
     }
+}
