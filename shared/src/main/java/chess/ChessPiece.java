@@ -76,13 +76,13 @@ public class ChessPiece {
             moves = diagonal(board, row, col, color, currentType);
         } else if (currentType == PieceType.ROOK) {
             moves = straight(board, row, col, color, currentType);
-        } /*else if (currentType == PieceType.QUEEN) {
+        } else if (currentType == PieceType.QUEEN) {
             moves.addAll(diagonal(board, row, col, color, currentType));
             moves.addAll(straight(board, row, col, color, currentType));
         } else if (currentType == PieceType.KING) {
             moves.addAll(diagonal(board, row, col, color, currentType));
             moves.addAll(straight(board, row, col, color, currentType));
-        } else if (currentType == PieceType.KNIGHT) {
+        } /*else if (currentType == PieceType.KNIGHT) {
             moves = knightMove(board, row, col, color, currentType);
         } else if (currentType == PieceType.PAWN) {
             moves = pawnMoves(board, row, col, color, currentType);
