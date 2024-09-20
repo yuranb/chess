@@ -203,24 +203,20 @@ public class ChessPiece {
                 ChessPosition newPos = new ChessPosition(newRow, newCol);
                 ChessPiece pieceAtPos = chessBoard.getPiece(newPos);
 
-                // Stop if there is a piece of the same color or capture if opponent's piece
-                if (pieceAtPos != null) {
-                    if (pieceAtPos.getTeamColor() == currentColor) {
-                        break;  // Stop if it's our own piece
-                    } else {
-                        valid_moves.add(new ChessMove(s_Position, newPos, null));  // Capture opponent's piece
-                        break;  // And then stop
-                    }
+                if (pieceAtPos != null && pieceAtPos.getTeamColor() == currentColor) {
+                    continue;
                 }
 
-                // Add the move as it's valid and continue
+                // Add the move if the position is unoccupied or occupied by an enemy piece
                 valid_moves.add(new ChessMove(s_Position, newPos, null));
 
-                if (currentType == PieceType.KING) {
-                    break;
+                // If it is occupied by an enemy piece, we also stop checking further in this direction
+                if (pieceAtPos != null && pieceAtPos.getTeamColor() != currentColor) {
+                    continue;
                 }
             }
         }
+
         return valid_moves;
     }
 }
