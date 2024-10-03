@@ -1,6 +1,8 @@
 package chess;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -64,8 +66,37 @@ public class ChessGame {
      * startPosition
      */
     public Collection<ChessMove> validMoves(ChessPosition startPosition) {
-        throw new RuntimeException("Not implemented");
+        List<ChessMove> legalMoves = new ArrayList<>();
+        ChessPiece movingPiece = board.getPiece(startPosition);
+
+        if (movingPiece == null) {
+            return null;
+        }
+
+        Collection<ChessMove> potentialMoves = movingPiece.pieceMoves(board, startPosition);
+
+        for (ChessMove move : potentialMoves) {
+            // 模拟执行
+            ChessPiece capturedPiece = board.getPiece(move.getEndPosition());
+            board.clearPiece(startPosition);
+            board.addPiece(move.getEndPosition(), movingPiece);
+
+            // 如果移动后未将军，则添加为合法移动
+            if (!isInCheck(movingPiece.getTeamColor())) {
+                legalMoves.add(move);
+            }
+
+            // 撤销移动
+            board.addPiece(startPosition, movingPiece);
+            if (capturedPiece != null) {
+                board.addPiece(move.getEndPosition(), capturedPiece);
+            } else {
+                board.clearPiece(move.getEndPosition());
+            }
+        }
+        return legalMoves;
     }
+
 
     /**
      * Makes a move in a chess game
