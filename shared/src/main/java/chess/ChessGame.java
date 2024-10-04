@@ -172,7 +172,24 @@ public class ChessGame {
             return false;
         }
 
-        //add more
+        TeamColor enemyColor = (teamColor == TeamColor.WHITE) ? TeamColor.BLACK : TeamColor.WHITE;
+
+        // 遍历棋盘，检查敌方棋子是否威胁到国王
+        for (int row = 1; row <= 8; row++) {
+            for (int col = 1; col <= 8; col++) {
+                ChessPosition position = new ChessPosition(row, col);
+                ChessPiece piece = board.getPiece(position);
+                if (piece != null && piece.getTeamColor() == enemyColor) {
+                    // 获取敌方棋子的所有可能移动
+                    Collection<ChessMove> moves = piece.pieceMoves(board, position);
+                    for (ChessMove move : moves) {
+                        if (move.getEndPosition().equals(kingPosition)) {
+                            return true; // 己方被将军
+                        }
+                    }
+                }
+            }
+        }//add more
         return false;
     }
 
