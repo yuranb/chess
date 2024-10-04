@@ -151,7 +151,29 @@ public class ChessGame {
      * @return True if the specified team is in check
      */
     public boolean isInCheck(TeamColor teamColor) {
-        throw new RuntimeException("Not implemented");
+        ChessPosition kingPosition = null;
+
+        // 遍历棋盘，寻找己方国王的位置
+        for (int row = 1; row <= 8; row++) {
+            for (int col = 1; col <= 8; col++) {
+                ChessPosition position = new ChessPosition(row, col);
+                ChessPiece piece = board.getPiece(position);
+                if (piece != null && piece.getTeamColor() == teamColor && piece.getPieceType() == ChessPiece.PieceType.KING) {
+                    kingPosition = position;
+                    break;
+                }
+            }
+            if (kingPosition != null) {
+                break;
+            }
+        }
+
+        if (kingPosition == null) {
+            return false;
+        }
+
+        //add more
+        return false;
     }
 
     /**
