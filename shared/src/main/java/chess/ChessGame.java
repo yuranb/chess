@@ -242,7 +242,24 @@ public class ChessGame {
      * @return True if the specified team is in stalemate, otherwise false
      */
     public boolean isInStalemate(TeamColor teamColor) {
-        throw new RuntimeException("Not implemented");
+        if (isInCheck(teamColor)) {
+            return false; // 被将军，不可能是僵局
+        }
+
+        // 检查是否有合法的移动
+        for (int row = 1; row <= 8; row++) {
+            for (int col = 1; col <= 8; col++) {
+                ChessPosition startPos = new ChessPosition(row, col);
+                ChessPiece piece = board.getPiece(startPos);
+                if (piece != null && piece.getTeamColor() == teamColor) {
+                    Collection<ChessMove> moves = validMoves(startPos);
+                    if (moves != null && !moves.isEmpty()) {
+                        return false; // 有合法移动所以不是僵局
+                    }
+                }
+            }
+        }
+        return true; // 没有合法移动所以是僵局
     }
 
     /**
