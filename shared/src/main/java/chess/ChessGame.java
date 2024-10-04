@@ -216,14 +216,25 @@ public class ChessGame {
                             board.clearPiece(startPos);
                             board.addPiece(move.getEndPosition(), piece);
 
-                            // add more
-                            return false;
+                            // 检查移动后是否仍被将军
+                            boolean stillInCheck = isInCheck(teamColor);
+
+                            board.addPiece(startPos, piece);
+                            if (capturedPiece != null) {
+                                board.addPiece(move.getEndPosition(), capturedPiece);
+                            } else {
+                                board.clearPiece(move.getEndPosition());
+                            }
+
+                            if (!stillInCheck) { // add more
+                                return false;
+                            }
                         }
                     }
                 }
             }
         }
-        return true;
+        return true;//被将死
     }
 
     /**
