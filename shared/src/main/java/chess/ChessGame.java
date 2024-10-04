@@ -109,6 +109,39 @@ public class ChessGame {
         if (currentPiece == null) {
             throw new InvalidMoveException("No piece at the start position.");
         }
+        if (currentPiece.getTeamColor() != turn) {
+            throw new InvalidMoveException("This is not your turn.");
+        }
+
+        Collection<ChessMove> legalMoves = validMoves(move.getStartPosition());
+        if (legalMoves == null || !legalMoves.contains(move)) {
+            throw new InvalidMoveException("Illegal movement.");
+        }
+
+        ChessPiece capturedPiece = board.getPiece(move.getEndPosition());
+        board.clearPiece(move.getStartPosition());
+        if (move.getPromotionPiece() != null) {
+            //处理升变
+            ChessPiece promotedPiece = new ChessPiece(turn, move.getPromotionPiece());
+            board.addPiece(move.getEndPosition(), promotedPiece);
+        } else {
+            board.addPiece(move.getEndPosition(), currentPiece);
+        }
+
+        // 检查移动后是否使自己被将军
+        if (isInCheck(turn)) {
+            // 撤销移动
+            board.addPiece(move.getStartPosition(), currentPiece);
+            if (capturedPiece != null) {
+                board.addPiece(move.getEndPosition(), capturedPiece);
+            } else {
+                board.clearPiece(move.getEndPosition());
+            }
+            throw new InvalidMoveException("Your side remains in General after moving.");
+        }
+
+        // 切换回合
+        turn = (turn == TeamColor.WHITE) ? TeamColor.BLACK : TeamColor.WHITE;
     }
 
     /**
@@ -132,10 +165,7 @@ public class ChessGame {
     }
 
     /**
-     * Determines if the given team is in stalemate, which here is defined as having
-     * no valid moves
-     *
-     * @param teamColor which team to check for stalemate
+     * Determines if the given team is in stalemate, which here is defined as having     * no valid moves     *     * @param teamColor which team to check for stalemate
      * @return True if the specified team is in stalemate, otherwise false
      */
     public boolean isInStalemate(TeamColor teamColor) {
