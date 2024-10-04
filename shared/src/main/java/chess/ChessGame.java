@@ -203,8 +203,27 @@ public class ChessGame {
             return false; // 未被将军，不可能被将死
         }
 
-        // add more
-        return false;
+        // 遍历所有棋子
+        for (int row = 1; row <= 8; row++) {
+            for (int col = 1; col <= 8; col++) {
+                ChessPosition startPos = new ChessPosition(row, col);
+                ChessPiece piece = board.getPiece(startPos);
+                if (piece != null && piece.getTeamColor() == teamColor) {
+                    Collection<ChessMove> moves = validMoves(startPos);
+                    if (moves != null) {
+                        for (ChessMove move : moves) {
+                            ChessPiece capturedPiece = board.getPiece(move.getEndPosition());
+                            board.clearPiece(startPos);
+                            board.addPiece(move.getEndPosition(), piece);
+
+                            // add more
+                            return false;
+                        }
+                    }
+                }
+            }
+        }
+        return true;
     }
 
     /**
