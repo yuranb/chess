@@ -5,9 +5,9 @@ import model.UserData;
 import java.util.HashSet;
 import java.util.Set;
 
-public class MeoryUserDAO implements UserDAO{
+public class MemoryUserDAO implements UserDAO{
     private Set<UserData> userSet;
-    public void MemoryUserDAO() {
+    public MemoryUserDAO() {
         userSet = new HashSet<>();
     }
 
