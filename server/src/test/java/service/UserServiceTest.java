@@ -38,7 +38,7 @@ public class UserServiceTest {
         DataAccessException exception = assertThrows(DataAccessException.class, () -> {
             userService.createUser(user);
         });
-        assertEquals("Username already taken", exception.getMessage());
+        assertEquals("Forbidden: Username already taken", exception.getMessage());
     }
 
     @Test
@@ -58,7 +58,7 @@ public class UserServiceTest {
         DataAccessException exception = assertThrows(DataAccessException.class, () -> {
             userService.loginUser(user);
         });
-        assertEquals("Invalid username or password", exception.getMessage());
+        assertEquals("Unauthorized: Invalid username or password", exception.getMessage());
     }
 
     @Test

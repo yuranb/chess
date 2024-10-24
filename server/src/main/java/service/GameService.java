@@ -3,11 +3,11 @@ package service;
 import dataaccess.*;
 import model.*;
 import java.util.List;
-import java.util.concurrent.ThreadLocalRandom;
 
 public class GameService {
     private final GameDAO gameDAO;
     private final AuthDAO authDAO;
+    private int gameCounter =1;
 
     public GameService(GameDAO gameDAO, AuthDAO authDAO) {
         this.gameDAO = gameDAO;
@@ -24,22 +24,18 @@ public List<GameData> listGames(String authToken) throws DataAccessException {
     return gameDAO.listGames();
     }
 
-public int createGame(String authToken) throws DataAccessException {
+public int createGame(String authToken, String gameName) throws DataAccessException {
     // Verify authToken exists
     AuthData authData = authDAO.getAuth(authToken);
     if (authData == null) {
         throw new DataAccessException("Invalid auth token");
     }
 
-    int newGameID;
-    do {
-        newGameID = ThreadLocalRandom.current().nextInt(1, Integer.MAX_VALUE);
-    } while (gameDAO.getGame(newGameID) != null);
-
-    GameData newGame = new GameData(newGameID, null, null, null, null);
+    int GameID = gameCounter++;
+    GameData newGame = new GameData(GameID, null, null, gameName, null);
     gameDAO.createGame(newGame);
 
-    return newGameID;
+    return GameID;
 }
 
     public void joinGame(String authToken, int gameID, String playerColor) throws DataAccessException {

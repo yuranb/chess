@@ -37,13 +37,13 @@ public class GameServiceTest {
     @Test
     void testCreateGame_InvalidAuthToken() {
         DataAccessException exception = assertThrows(DataAccessException.class, () -> {
-            gameService.createGame("invalidToken");
+            gameService.createGame("invalidToken","Test Game");
         });
         assertEquals("Invalid auth token", exception.getMessage());
     }
     @Test
     void testJoinGame_Success() throws DataAccessException {
-        int gameID = gameService.createGame(testAuth.authToken());
+        int gameID = gameService.createGame(testAuth.authToken(),"Test Game");
 
         // Join the game as WHITE
         gameService.joinGame(testAuth.authToken(), gameID, "WHITE");
@@ -54,7 +54,7 @@ public class GameServiceTest {
     }
     @Test
     void testJoinGame_SpotAlreadyTaken() throws DataAccessException {
-        int gameID = gameService.createGame(testAuth.authToken());
+        int gameID = gameService.createGame(testAuth.authToken(),"Test Game");
 
         // First user joins as WHITE
         gameService.joinGame(testAuth.authToken(), gameID, "WHITE");
@@ -73,7 +73,7 @@ public class GameServiceTest {
     }
     @Test
     void testJoinGame_InvalidColor() throws DataAccessException {
-        int gameID = gameService.createGame(testAuth.authToken());
+        int gameID = gameService.createGame(testAuth.authToken(),"Test Game");
 
         DataAccessException exception = assertThrows(DataAccessException.class, () -> {
             gameService.joinGame(testAuth.authToken(), gameID, "Red");
@@ -89,7 +89,7 @@ public class GameServiceTest {
     }
     @Test
     void testJoinGame_InvalidAuthToken() throws DataAccessException {
-        int gameID = gameService.createGame(testAuth.authToken());
+        int gameID = gameService.createGame(testAuth.authToken(),"Test Game");
 
         DataAccessException exception = assertThrows(DataAccessException.class, () -> {
             gameService.joinGame("invalidToken", gameID, "WHITE");
@@ -98,8 +98,8 @@ public class GameServiceTest {
     }
     @Test
     void testListGames_Success() throws DataAccessException {
-        int gameID1 = gameService.createGame(testAuth.authToken());
-        int gameID2 = gameService.createGame(testAuth.authToken());
+        int gameID1 = gameService.createGame(testAuth.authToken(),"Test Game");
+        int gameID2 = gameService.createGame(testAuth.authToken(),"Test Game");
 
         List<GameData> games = gameService.listGames(testAuth.authToken());
         assertNotNull(games, "The games list should not null");
@@ -120,7 +120,7 @@ public class GameServiceTest {
     }
     @Test
     void testClearData() throws DataAccessException {
-        int gameID = gameService.createGame(testAuth.authToken());
+        int gameID = gameService.createGame(testAuth.authToken(),"Test Game");
         gameService.joinGame(testAuth.authToken(), gameID, "WHITE");
 
         gameService.clear();

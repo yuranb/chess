@@ -16,7 +16,7 @@ public AuthData createUser(UserData userData) throws DataAccessException {
     // Check if the username already exists
     UserData existingUser = userDAO.getUser(userData.username());
     if (existingUser != null) {
-        throw new DataAccessException("Username already taken");
+        throw new DataAccessException("Forbidden: Username already taken");
     }
 
     userDAO.createUser(userData);
@@ -33,7 +33,7 @@ public AuthData loginUser(UserData userData) throws DataAccessException {
     // Authenticate the user
     boolean isAuthenticated = userDAO.authenticateUser(userData.username(), userData.password());
     if (!isAuthenticated) {
-        throw new DataAccessException("Invalid username or password");
+        throw new DataAccessException("Unauthorized: Invalid username or password");
     }
 
     String authToken = UUID.randomUUID().toString();
