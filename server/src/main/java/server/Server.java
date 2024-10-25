@@ -18,6 +18,7 @@ public class Server {
     GameService gameService;
 
     UserHandler userHandler;
+    GameHandler gameHandler;
     private final Gson gson = new Gson();
     public Server() {
 
@@ -29,6 +30,7 @@ public class Server {
         gameService = new GameService(gameDAO, authDAO);
 
         userHandler = new UserHandler(userService);
+        gameHandler = new GameHandler(gameService);
     }
 
     public int run(int desiredPort) {
@@ -36,13 +38,14 @@ public class Server {
 
         Spark.staticFiles.location("web");
 
-        // Register your endpoints and handle exceptions here.
-
-        //This line initializes the server and can be removed once you have a functioning endpoint
         Spark.delete("/db", this::clear);
         Spark.post("/user", userHandler::register);
         Spark.post("/session", userHandler::login);
         Spark.delete("/session", userHandler::logout);
+
+        Spark.get("/game", gameHandler::listGames);
+        Spark.post("/game", gameHandler::createGame);
+        Spark.put("/game", gameHandler::joinGame);
 
         Spark.exception(DataAccessException.class, this::dataAccessExceptionHandler);
         Spark.exception(Exception.class, this::genericExceptionHandler);
