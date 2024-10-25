@@ -35,14 +35,14 @@ public class GameServiceTest {
     }
 
     @Test
-    void testCreateGame_InvalidAuthToken() {
+    void testCreateGameInvalidAuthToken() {
         DataAccessException exception = assertThrows(DataAccessException.class, () -> {
             gameService.createGame("invalidToken","Test Game");
         });
         assertEquals("Unauthorized: Invalid auth token", exception.getMessage());
     }
     @Test
-    void testJoinGame_Success() throws DataAccessException {
+    void testJoinGameSuccess() throws DataAccessException {
         int gameID = gameService.createGame(testAuth.authToken(),"Test Game");
 
         // Join the game as WHITE
@@ -50,10 +50,10 @@ public class GameServiceTest {
 
         GameData game = gameDAO.getGame(gameID);
         assertEquals(testUser.username(), game.whiteUsername(), "The White player shou be 'pp'");
-        assertNull(game.blackUsername(), "The Black player shou be null");
+        assertNull(game.blackUsername(), "The Black player should be null");
     }
     @Test
-    void testJoinGame_SpotAlreadyTaken() throws DataAccessException {
+    void testJoinGameSpotAlreadyTaken() throws DataAccessException {
         int gameID = gameService.createGame(testAuth.authToken(),"Test Game");
 
         // First user joins as WHITE
@@ -72,7 +72,7 @@ public class GameServiceTest {
         assertEquals("Forbidden: WHITE spot is already taken", exception.getMessage());
     }
     @Test
-    void testJoinGame_InvalidColor() throws DataAccessException {
+    void testJoinGameInvalidColor() throws DataAccessException {
         int gameID = gameService.createGame(testAuth.authToken(),"Test Game");
 
         DataAccessException exception = assertThrows(DataAccessException.class, () -> {
@@ -81,14 +81,14 @@ public class GameServiceTest {
         assertEquals("Bad request: Invalid color Choice", exception.getMessage());
     }
     @Test
-    void testJoinGame_GameDNE() {
+    void testJoinGameGameDNE() {
         DataAccessException exception = assertThrows(DataAccessException.class, () -> {
             gameService.joinGame(testAuth.authToken(), 999, "WHITE");
         });
         assertEquals("Bad request: Game does not exist", exception.getMessage());
     }
     @Test
-    void testJoinGame_InvalidAuthToken() throws DataAccessException {
+    void testJoinGameInvalidAuthToken() throws DataAccessException {
         int gameID = gameService.createGame(testAuth.authToken(),"Test Game");
 
         DataAccessException exception = assertThrows(DataAccessException.class, () -> {
@@ -97,7 +97,7 @@ public class GameServiceTest {
         assertEquals("Unauthorized: Invalid auth token", exception.getMessage());
     }
     @Test
-    void testListGames_Success() throws DataAccessException {
+    void testListGamesSuccess() throws DataAccessException {
         int gameID1 = gameService.createGame(testAuth.authToken(),"Test Game");
         int gameID2 = gameService.createGame(testAuth.authToken(),"Test Game");
 
@@ -112,7 +112,7 @@ public class GameServiceTest {
         assertTrue(containsGame2, "The games list should contain the second created game");
     }
     @Test
-    void testListGames_InvalidAuthToken() {
+    void testListGamesInvalidAuthToken() {
         DataAccessException exception = assertThrows(DataAccessException.class, () -> {
             gameService.listGames("invalidToken");
         });
@@ -120,12 +120,12 @@ public class GameServiceTest {
     }
     @Test
     void testClearData() throws DataAccessException {
-        int gameID = gameService.createGame(testAuth.authToken(),"Test Game");
-        gameService.joinGame(testAuth.authToken(), gameID, "WHITE");
+        int gameId = gameService.createGame(testAuth.authToken(),"Test Game");
+        gameService.joinGame(testAuth.authToken(), gameId, "WHITE");
 
         gameService.clear();
 
-        GameData game = gameDAO.getGame(gameID);
+        GameData game = gameDAO.getGame(gameId);
         assertNull(game, "After clearing, the game data should be null");
 
         List<GameData> games = gameService.listGames(testAuth.authToken());

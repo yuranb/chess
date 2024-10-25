@@ -12,8 +12,8 @@ import java.util.List;
  */
 public class ChessPiece {
 
-    private ChessGame.TeamColor color;
-    private ChessPiece.PieceType pieceType;
+    private final ChessGame.TeamColor color;
+    private final ChessPiece.PieceType pieceType;
 
     public ChessPiece(ChessGame.TeamColor pieceColor, ChessPiece.PieceType type) {
         this.color = pieceColor;
@@ -72,29 +72,39 @@ public class ChessPiece {
         List<ChessMove> moves = new ArrayList<>();
         int row = myPosition.getRow();
         int col = myPosition.getColumn();
-        if (currentType == PieceType.BISHOP) {
-            moves = diagonal(board, row, col, color, currentType);
-        } else if (currentType == PieceType.ROOK) {
-            moves = straight(board, row, col, color, currentType);
-        } else if (currentType == PieceType.QUEEN) {
-            moves.addAll(diagonal(board, row, col, color, currentType));
-            moves.addAll(straight(board, row, col, color, currentType));
-        } else if (currentType == PieceType.KING) {
-            moves.addAll(diagonal(board, row, col, color, currentType));
-            moves.addAll(straight(board, row, col, color, currentType));
-        } else if (currentType == PieceType.KNIGHT) {
-            moves = knightMove(board, row, col, color, currentType);
-        } else if (currentType == PieceType.PAWN) {
-            moves = pawnMoves(board, row, col, color, currentType);
-        } else {
-            throw new IllegalArgumentException("Wrong piece_type: " + currentType);
+
+        switch (currentType) {
+            case BISHOP:
+                moves = diagonal(board, row, col, color, currentType);
+                break;
+            case ROOK:
+                moves = straight(board, row, col, color, currentType);
+                break;
+            case QUEEN:
+                moves.addAll(diagonal(board, row, col, color, currentType));
+                moves.addAll(straight(board, row, col, color, currentType));
+                break;
+            case KING:
+                moves.addAll(diagonal(board, row, col, color, currentType));
+                moves.addAll(straight(board, row, col, color, currentType));
+                break;
+            case KNIGHT:
+                moves = knightMove(board, row, col, color, currentType);
+                break;
+            case PAWN:
+                moves = pawnMoves(board, row, col, color, currentType);
+                break;
+            default:
+                throw new IllegalArgumentException("Wrong piece_type: " + currentType);
         }
+
         return moves;
+        
     }
 
     public static List<ChessMove> diagonal(ChessBoard chessBoard, int row, int col, ChessGame.TeamColor currentColor, PieceType currentType) {
-        ChessPosition s_Position = new ChessPosition(row, col);
-        List<ChessMove> valid_moves = new ArrayList<>();
+        ChessPosition startPosition = new ChessPosition(row, col);
+        List<ChessMove> validMoves = new ArrayList<>();
 
         int[][] directions = {
                 {1, 1},    // right up
@@ -125,13 +135,13 @@ public class ChessPiece {
                     if (pieceAtPos.getTeamColor() == currentColor) {
                         break;  // Stop if it's our own piece
                     } else {
-                        valid_moves.add(new ChessMove(s_Position, newPos, null));  // Capture opponent's piece
+                        validMoves.add(new ChessMove(startPosition, newPos, null));  // Capture opponent's piece
                         break;  // And then stop
                     }
                 }
 
                 // Add the move as it's valid and continue
-                valid_moves.add(new ChessMove(s_Position, newPos, null));
+                validMoves.add(new ChessMove(startPosition, newPos, null));
 
                 if (currentType == PieceType.KING) {
                     break;
@@ -139,12 +149,12 @@ public class ChessPiece {
             }
         }
 
-        return valid_moves;
+        return validMoves;
     }
 
     public static List<ChessMove> straight(ChessBoard chessBoard, int row, int col, ChessGame.TeamColor currentColor, PieceType currentType) {
-        ChessPosition s_Position = new ChessPosition(row, col);
-        List<ChessMove> valid_moves = new ArrayList<>();
+        ChessPosition startPosition = new ChessPosition(row, col);
+        List<ChessMove> validMoves = new ArrayList<>();
 
         int[][] directions = {{0, 1}, {0, -1}, {1, 0}, {-1, 0}};  // up, down, right, left
 
@@ -169,13 +179,13 @@ public class ChessPiece {
                     if (pieceAtPos.getTeamColor() == currentColor) {
                         break;  // Stop if it's our own piece
                     } else {
-                        valid_moves.add(new ChessMove(s_Position, newPos, null));  // Capture opponent's piece
+                        validMoves.add(new ChessMove(startPosition, newPos, null));  // Capture opponent's piece
                         break;  // And then stop
                     }
                 }
 
                 // Add the move as it's valid and continue
-                valid_moves.add(new ChessMove(s_Position, newPos, null));
+                validMoves.add(new ChessMove(startPosition, newPos, null));
 
                 if (currentType == PieceType.KING) {
                     break;
@@ -183,12 +193,12 @@ public class ChessPiece {
             }
         }
 
-        return valid_moves;
+        return validMoves;
     }
 
     public static List<ChessMove> knightMove(ChessBoard chessBoard, int row, int col, ChessGame.TeamColor currentColor, PieceType currentType) {
-        ChessPosition s_Position = new ChessPosition(row, col);
-        List<ChessMove> valid_moves = new ArrayList<>();
+        ChessPosition startPosition = new ChessPosition(row, col);
+        List<ChessMove> validMoves = new ArrayList<>();
         int[][] directions = {
                 {2, 1}, {2, -1}, {-2, 1}, {-2, -1},
                 {1, 2}, {1, -2}, {-1, 2}, {-1, -2}
@@ -208,7 +218,7 @@ public class ChessPiece {
                 }
 
                 // Add the move if the position is unoccupied or occupied by an enemy piece
-                valid_moves.add(new ChessMove(s_Position, newPos, null));
+                validMoves.add(new ChessMove(startPosition, newPos, null));
 
                 // If it is occupied by an enemy piece, we also stop checking further in this direction
                 if (pieceAtPos != null && pieceAtPos.getTeamColor() != currentColor) {
@@ -217,11 +227,11 @@ public class ChessPiece {
             }
         }
 
-        return valid_moves;
+        return validMoves;
     }
 
     public static List<ChessMove> pawnMoves(ChessBoard chessBoard, int row, int col, ChessGame.TeamColor currentColor, PieceType currentType) {
-        List<ChessMove> valid_moves = new ArrayList<>();
+        List<ChessMove> validMoves = new ArrayList<>();
         int direction = (currentColor == ChessGame.TeamColor.WHITE) ? 1 : -1; // White moves up (1), Black moves down (-1)
         int startRow = (currentColor == ChessGame.TeamColor.WHITE) ? 2 : 7; // Starting row for pawns
         int nextRow = row + direction;
@@ -229,12 +239,12 @@ public class ChessPiece {
         // Check simple move forward
         if (chessBoard.getPiece(new ChessPosition(nextRow, col)) == null) {
             if (nextRow == 1 || nextRow == 8) { // Promotion row for pawns
-                valid_moves.add(new ChessMove(new ChessPosition(row, col), new ChessPosition(nextRow, col), PieceType.QUEEN));
-                valid_moves.add(new ChessMove(new ChessPosition(row, col), new ChessPosition(nextRow, col), PieceType.ROOK));
-                valid_moves.add(new ChessMove(new ChessPosition(row, col), new ChessPosition(nextRow, col), PieceType.BISHOP));
-                valid_moves.add(new ChessMove(new ChessPosition(row, col), new ChessPosition(nextRow, col), PieceType.KNIGHT));
+                validMoves.add(new ChessMove(new ChessPosition(row, col), new ChessPosition(nextRow, col), PieceType.QUEEN));
+                validMoves.add(new ChessMove(new ChessPosition(row, col), new ChessPosition(nextRow, col), PieceType.ROOK));
+                validMoves.add(new ChessMove(new ChessPosition(row, col), new ChessPosition(nextRow, col), PieceType.BISHOP));
+                validMoves.add(new ChessMove(new ChessPosition(row, col), new ChessPosition(nextRow, col), PieceType.KNIGHT));
             } else {
-                valid_moves.add(new ChessMove(new ChessPosition(row, col), new ChessPosition(nextRow, col), null));
+                validMoves.add(new ChessMove(new ChessPosition(row, col), new ChessPosition(nextRow, col), null));
                 // Check if it's the initial two-square move
                 boolean isStartingRow = row == startRow;
                 boolean isNextSquareEmpty = chessBoard.getPiece(new ChessPosition(nextRow + direction, col)) == null;
@@ -243,7 +253,7 @@ public class ChessPiece {
                     ChessPosition startPosition = new ChessPosition(row, col);
                     ChessPosition targetPosition = new ChessPosition(nextRow + direction, col);
                     ChessMove twoSquareMove = new ChessMove(startPosition, targetPosition, null);
-                    valid_moves.add(twoSquareMove);
+                    validMoves.add(twoSquareMove);
                 }
             }
         }
@@ -255,16 +265,16 @@ public class ChessPiece {
                 ChessPiece target = chessBoard.getPiece(new ChessPosition(nextRow, nextCol));
                 if (target != null && target.getTeamColor() != currentColor) {
                     if (nextRow == 1 || nextRow == 8) { // Promotion row
-                        valid_moves.add(new ChessMove(new ChessPosition(row, col), new ChessPosition(nextRow, nextCol), PieceType.QUEEN));
-                        valid_moves.add(new ChessMove(new ChessPosition(row, col), new ChessPosition(nextRow, nextCol), PieceType.ROOK));
-                        valid_moves.add(new ChessMove(new ChessPosition(row, col), new ChessPosition(nextRow, nextCol), PieceType.BISHOP));
-                        valid_moves.add(new ChessMove(new ChessPosition(row, col), new ChessPosition(nextRow, nextCol), PieceType.KNIGHT));
+                        validMoves.add(new ChessMove(new ChessPosition(row, col), new ChessPosition(nextRow, nextCol), PieceType.QUEEN));
+                        validMoves.add(new ChessMove(new ChessPosition(row, col), new ChessPosition(nextRow, nextCol), PieceType.ROOK));
+                        validMoves.add(new ChessMove(new ChessPosition(row, col), new ChessPosition(nextRow, nextCol), PieceType.BISHOP));
+                        validMoves.add(new ChessMove(new ChessPosition(row, col), new ChessPosition(nextRow, nextCol), PieceType.KNIGHT));
                     } else {
-                        valid_moves.add(new ChessMove(new ChessPosition(row, col), new ChessPosition(nextRow, nextCol), null));
+                        validMoves.add(new ChessMove(new ChessPosition(row, col), new ChessPosition(nextRow, nextCol), null));
                     }
                 }
             }
         }
-        return valid_moves;
+        return validMoves;
     }
 }

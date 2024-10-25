@@ -23,7 +23,7 @@ public class UserServiceTest {
     }
 
     @Test
-    void testCreateUser_Success() throws DataAccessException {
+    void testCreateUserSuccess() throws DataAccessException {
         AuthData auth = userService.createUser(user);
 
         assertNotNull(auth);
@@ -32,7 +32,7 @@ public class UserServiceTest {
     }
 
     @Test
-    void testCreateUser_ExistsUser() throws DataAccessException {
+    void testCreateUserExistsUser() throws DataAccessException {
         userService.createUser(user);
 
         DataAccessException exception = assertThrows(DataAccessException.class, () -> {
@@ -79,7 +79,7 @@ public class UserServiceTest {
         userService.clear();
 
         // Verify auth data has been cleared
-        UserData retrievedUser = userDAO.getUser("frank");
+        UserData retrievedUser = userDAO.getUser("pp");
         assertNull(retrievedUser);
 
         AuthData authData = authDAO.getAuth("any-token");
