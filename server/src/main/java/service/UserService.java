@@ -12,6 +12,7 @@ public class UserService {
         this.userDAO = userDAO;
         this.authDAO = authDAO;
     }
+
 public AuthData createUser(UserData userData) throws DataAccessException {
     // Check if the username already exists
     UserData existingUser = userDAO.getUser(userData.username());
@@ -36,6 +37,7 @@ public AuthData loginUser(UserData userData) throws DataAccessException {
         throw new DataAccessException("Unauthorized: Invalid username or password");
     }
 
+    // Generate a new authToken
     String authToken = UUID.randomUUID().toString();
     AuthData authData = new AuthData(authToken, userData.username());
 
@@ -57,5 +59,5 @@ public void logoutUser(String authToken) throws DataAccessException {
 public void clear() throws DataAccessException {
     userDAO.clear();
     authDAO.clear();
-}
+    }
 }
