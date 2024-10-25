@@ -2,31 +2,26 @@ package dataaccess;
 
 import model.UserData;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.HashMap;
+import java.util.Map;
 
 public class MemoryUserDAO implements UserDAO{
-    private Set<UserData> userSet;
+    private final Map<String , UserData> userMap;
     public MemoryUserDAO() {
-        userSet = new HashSet<>();
+        this.userMap = new HashMap<>();
     }
 
     @Override
     public void createUser(UserData user) throws DataAccessException {
-        if (userSet.contains(user)) {
+        if (userMap.containsKey(user.username())) {
             throw new DataAccessException("User already exists");
         }
-        userSet.add(user);
+        userMap.put(user.username(),user);
     }
 
     @Override
     public UserData getUser(String username) throws DataAccessException {
-        for (UserData user : userSet) {
-            if (user.username().equals(username)) {
-                return user;
-            }
-        }
-        return null;
+        return userMap.get(username);
     }
 
     @Override
@@ -40,6 +35,6 @@ public class MemoryUserDAO implements UserDAO{
 
     @Override
     public void clear() throws DataAccessException {
-        userSet.clear();
+        userMap.clear();
     }
 }

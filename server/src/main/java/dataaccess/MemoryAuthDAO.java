@@ -6,27 +6,27 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class MemoryAuthDAO implements AuthDAO{
-    private Map<String, AuthData> authMap;
+    private final Map<String, AuthData> authTokenMap;
     public MemoryAuthDAO() {
-        authMap = new HashMap<>();
+        this.authTokenMap = new HashMap<>();
     }
 
     @Override
     public void createAuth(AuthData auth) throws DataAccessException {
-        authMap.put(auth.authToken(), auth);
+        authTokenMap.put(auth.authToken(), auth);
     }
 
     @Override
     public AuthData getAuth(String authToken) throws DataAccessException {
-        return  authMap.get(authToken);    }
+        return  authTokenMap.get(authToken);    }
 
     @Override
     public void deleteAuth(String authToken) throws DataAccessException {
-        authMap.remove(authToken);
+        authTokenMap.remove(authToken);
     }
 
     @Override
     public void clear() throws DataAccessException {
-        authMap.clear();
+        authTokenMap.clear();
     }
 }

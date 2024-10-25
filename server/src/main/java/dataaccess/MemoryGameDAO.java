@@ -8,43 +8,40 @@ import java.util.List;
 import java.util.Map;
 
 public class MemoryGameDAO implements GameDAO{
-    private Map<Integer, GameData> gameMap;
-    private int gameIDCounter;
+    private final Map<Integer, GameData> gameDataMap;
 
     public MemoryGameDAO() {
-        gameMap = new HashMap<>();
-        gameIDCounter = 1;
+        this.gameDataMap = new HashMap<>();
     }
 
     @Override
     public void createGame(GameData game) throws DataAccessException {
-        if (gameMap.containsKey(game.gameID())) {
+        if (gameDataMap.containsKey(game.gameID())) {
             throw new DataAccessException("Game ID already exists");
         }
-        gameMap.put(game.gameID(), game);
+        gameDataMap.put(game.gameID(), game);
     }
 
     @Override
     public GameData getGame(int gameID) throws DataAccessException {
-        return gameMap.get(gameID);
+        return gameDataMap.get(gameID);
     }
 
     @Override
     public List<GameData> listGames() throws DataAccessException {
-        return new ArrayList<>(gameMap.values());
+        return new ArrayList<>(gameDataMap.values());
     }
 
     @Override
     public void updateGame(GameData game) throws DataAccessException {
-        if (!gameMap.containsKey(game.gameID())) {
+        if (!gameDataMap.containsKey(game.gameID())) {
             throw new DataAccessException("Game not found");
         }
-        gameMap.put(game.gameID(), game);
+        gameDataMap.put(game.gameID(), game);
     }
 
     @Override
     public void clear() throws DataAccessException {
-        gameMap.clear();
-        gameIDCounter = 1;
+        gameDataMap.clear();
     }
 }
