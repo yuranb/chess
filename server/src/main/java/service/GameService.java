@@ -25,11 +25,11 @@ public int createGame(String authToken, String gameName) throws DataAccessExcept
     // Verify authToken exists
     AuthData authData = validateAuthToken(authToken);
 
-    int GameID = gameCounter++;
-    GameData newGame = new GameData(GameID, null, null, gameName, null);
+    int gameID = gameCounter++;
+    GameData newGame = new GameData(gameID, null, null, gameName, null);
     gameDAO.createGame(newGame);
 
-    return GameID;
+    return gameID;
 }
 
     public void joinGame(String authToken, int gameID, String playerColor) throws DataAccessException {

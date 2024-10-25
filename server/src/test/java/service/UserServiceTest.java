@@ -42,7 +42,7 @@ public class UserServiceTest {
     }
 
     @Test
-    void testLoginUser_Success() throws DataAccessException {
+    void testLoginUserSuccess() throws DataAccessException {
         userService.createUser(user);
 
         AuthData auth = userService.loginUser(new UserData("pp", "123456",  null));
@@ -53,7 +53,7 @@ public class UserServiceTest {
     }
 
     @Test
-    void testLoginUser_InvalidCredentials() {
+    void testLoginUserInvalidCredentials() {
 
         DataAccessException exception = assertThrows(DataAccessException.class, () -> {
             userService.loginUser(user);
@@ -62,7 +62,7 @@ public class UserServiceTest {
     }
 
     @Test
-    void testLogoutUser_Success() throws DataAccessException {
+    void testLogoutUserSuccess() throws DataAccessException {
         AuthData auth = userService.createUser(user);
 
         userService.logoutUser(auth.authToken());

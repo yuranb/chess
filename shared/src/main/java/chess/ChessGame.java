@@ -29,7 +29,7 @@ public class ChessGame {
     }
 
     /**
-     * Set's which teams turn it is
+     * Sets which team's turn it is
      *
      * @param team the team whose turn it is
      */
@@ -39,8 +39,12 @@ public class ChessGame {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
         ChessGame chessGame = (ChessGame) o;
         return Objects.equals(board, chessGame.board) && turn == chessGame.turn;
     }
@@ -59,14 +63,13 @@ public class ChessGame {
     }
 
     /**
-     * Gets a valid moves for a piece at the given location
+     * Gets valid moves for a piece at the given location
      *
      * @param startPosition the piece to get valid moves for
-     * @return Set of valid moves for requested piece, or null if no piece at
+     * @return Collection of valid moves for the requested piece, or null if no piece at
      * startPosition
      */
     public Collection<ChessMove> validMoves(ChessPosition startPosition) {
-        List<ChessMove> legalMoves = new ArrayList<>();
         ChessPiece movingPiece = board.getPiece(startPosition);
 
         if (movingPiece == null) {
@@ -74,6 +77,7 @@ public class ChessGame {
         }
 
         Collection<ChessMove> potentialMoves = movingPiece.pieceMoves(board, startPosition);
+        List<ChessMove> legalMoves = new ArrayList<>();
 
         for (ChessMove move : potentialMoves) {
             // 模拟执行
@@ -97,31 +101,34 @@ public class ChessGame {
         return legalMoves;
     }
 
-
     /**
      * Makes a move in a chess game
      *
-     * @param move chess move to preform
+     * @param move chess move to perform
      * @throws InvalidMoveException if move is invalid
      */
     public void makeMove(ChessMove move) throws InvalidMoveException {
         ChessPiece currentPiece = this.board.getPiece(move.getStartPosition());
+
         if (currentPiece == null) {
             throw new InvalidMoveException("No piece at the start position.");
         }
+
         if (currentPiece.getTeamColor() != turn) {
             throw new InvalidMoveException("This is not your turn.");
         }
 
         Collection<ChessMove> legalMoves = validMoves(move.getStartPosition());
+
         if (legalMoves == null || !legalMoves.contains(move)) {
             throw new InvalidMoveException("Illegal movement.");
         }
 
         ChessPiece capturedPiece = board.getPiece(move.getEndPosition());
         board.clearPiece(move.getStartPosition());
+
         if (move.getPromotionPiece() != null) {
-            //处理升变
+            // 处理升变
             ChessPiece promotedPiece = new ChessPiece(turn, move.getPromotionPiece());
             board.addPiece(move.getEndPosition(), promotedPiece);
         } else {
@@ -137,11 +144,18 @@ public class ChessGame {
             } else {
                 board.clearPiece(move.getEndPosition());
             }
-            throw new InvalidMoveException("Your side remains in General after moving.");
+            throw new InvalidMoveException("Your side remains in Check after moving.");
         }
 
         // 切换回合
-        turn = (turn == TeamColor.WHITE) ? TeamColor.BLACK : TeamColor.WHITE;
+        switchTurn();
+    }
+
+    /**
+     * Switches the current turn to the opposite team.
+     */
+    private void switchTurn() {
+        this.turn = (this.turn == TeamColor.WHITE) ? TeamColor.BLACK : TeamColor.WHITE;
     }
 
     /**
@@ -151,44 +165,29 @@ public class ChessGame {
      * @return True if the specified team is in check
      */
     public boolean isInCheck(TeamColor teamColor) {
-        ChessPosition kingPosition = null;
-
-        // 遍历棋盘，寻找己方国王的位置
-        for (int row = 1; row <= 8; row++) {
-            for (int col = 1; col <= 8; col++) {
-                ChessPosition position = new ChessPosition(row, col);
-                ChessPiece piece = board.getPiece(position);
-                if (piece != null && piece.getTeamColor() == teamColor && piece.getPieceType() == ChessPiece.PieceType.KING) {
-                    kingPosition = position;
-                    break;
-                }
-            }
-            if (kingPosition != null) {
-                break;
-            }
-        }
+        ChessPosition kingPosition = findKingPosition(teamColor);
 
         if (kingPosition == null) {
-            return false;
+            return false; // King not found, possibly game over
         }
 
-        TeamColor enemyColor = (teamColor == TeamColor.WHITE) ? TeamColor.BLACK : TeamColor.WHITE;
-        // 遍历棋盘，检查敌方棋子是否威胁到国王
+        TeamColor enemyColor = getEnemyColor(teamColor);
+
+        // 检查所有敌方棋子的移动是否可以攻击国王
         for (int row = 1; row <= 8; row++) {
             for (int col = 1; col <= 8; col++) {
                 ChessPosition position = new ChessPosition(row, col);
                 ChessPiece piece = board.getPiece(position);
                 if (piece != null && piece.getTeamColor() == enemyColor) {
-                    // 获取敌方棋子的所有可能移动
                     Collection<ChessMove> moves = piece.pieceMoves(board, position);
                     for (ChessMove move : moves) {
                         if (move.getEndPosition().equals(kingPosition)) {
-                            return true; // 己方被将军
+                            return true; // 被将军
                         }
                     }
                 }
             }
-        }//add more
+        }
         return false;
     }
 
@@ -198,43 +197,55 @@ public class ChessGame {
      * @param teamColor which team to check for checkmate
      * @return True if the specified team is in checkmate
      */
+    private ChessPosition findKingPosition(TeamColor teamColor) {
+        for (int row = 1; row <= 8; row++) {
+            for (int col = 1; col <= 8; col++) {
+                ChessPosition position = new ChessPosition(row, col);
+                ChessPiece piece = board.getPiece(position);
+                if (piece != null && piece.getTeamColor() == teamColor &&
+                        piece.getPieceType() == ChessPiece.PieceType.KING) {
+                    return position;
+                }
+            }
+        }
+        return null; // King not found
+    }
+
+    /**
+     * Gets the enemy team color.
+     *
+     * @param teamColor The current team color.
+     * @return The enemy team color.
+     */
+    private TeamColor getEnemyColor(TeamColor teamColor) {
+        return (teamColor == TeamColor.WHITE) ? TeamColor.BLACK : TeamColor.WHITE;
+    }
+
+    /**
+     * Determines if the given team is in checkmate.
+     *
+     * @param teamColor which team to check for checkmate
+     * @return True if the specified team is in checkmate
+     */
     public boolean isInCheckmate(TeamColor teamColor) {
         if (!isInCheck(teamColor)) {
             return false; // 未被将军，不可能被将死
         }
 
-        // 遍历所有棋子
+        // 遍历所有己方棋子，检查是否有任何合法移动可以解除将军
         for (int row = 1; row <= 8; row++) {
             for (int col = 1; col <= 8; col++) {
                 ChessPosition startPos = new ChessPosition(row, col);
                 ChessPiece piece = board.getPiece(startPos);
                 if (piece != null && piece.getTeamColor() == teamColor) {
                     Collection<ChessMove> moves = validMoves(startPos);
-                    if (moves != null) {
-                        for (ChessMove move : moves) {
-                            ChessPiece capturedPiece = board.getPiece(move.getEndPosition());
-                            board.clearPiece(startPos);
-                            board.addPiece(move.getEndPosition(), piece);
-
-                            // 检查移动后是否仍被将军
-                            boolean stillInCheck = isInCheck(teamColor);
-
-                            board.addPiece(startPos, piece);
-                            if (capturedPiece != null) {
-                                board.addPiece(move.getEndPosition(), capturedPiece);
-                            } else {
-                                board.clearPiece(move.getEndPosition());
-                            }
-
-                            if (!stillInCheck) { // add more
-                                return false;
-                            }
-                        }
+                    if (moves != null && !moves.isEmpty()) {
+                        return false; // 存在至少一个合法移动，可以解除将军
                     }
                 }
             }
         }
-        return true;//被将死
+        return true; // 没有合法移动，处于将死状态
     }
 
     /**
