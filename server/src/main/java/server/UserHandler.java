@@ -18,53 +18,52 @@ public class UserHandler {
         this.userService = userService;
     }
 
-    public Object register(Request req, Response resp) throws DataAccessException {
-        UserData userData;
-        try {
-            userData = gson.fromJson(req.body(), UserData.class);
-        } catch (JsonSyntaxException e) {
-            throw new DataAccessException("Bad request: invalid JSON format");
-        }
-
-        if (userData.username() == null || userData.password() == null || userData.email() == null) {
-            throw new DataAccessException("Bad request: missing username, password, or email");
-        }
-
-        AuthData authData = userService.createUser(userData);
-        resp.status(200);
-        resp.type("application/json");
-        return gson.toJson(authData);
+public Object register(Request req, Response resp) throws DataAccessException {
+    UserData userData;
+    try {
+        userData = gson.fromJson(req.body(), UserData.class);
+    } catch (JsonSyntaxException e) {
+        throw new DataAccessException("Bad request: invalid JSON format");
     }
 
-    public Object login(Request req, Response resp) throws DataAccessException {
-        UserData userData;
-        try {
-            userData = gson.fromJson(req.body(), UserData.class);
-        } catch (JsonSyntaxException e) {
-            throw new DataAccessException("Bad request: invalid JSON format");
-        }
-
-        if (userData.username() == null || userData.password() == null) {
-            throw new DataAccessException("Bad request: missing username or password");
-        }
-
-        AuthData authData = userService.loginUser(userData);
-        resp.status(200);
-        resp.type("application/json");
-        return gson.toJson(authData);
+    if (userData.username() == null || userData.password() == null || userData.email() == null) {
+        throw new DataAccessException("Bad request: missing username, password, or email");
     }
 
-    public Object logout(Request req, Response resp) throws DataAccessException {
-        String authToken = req.headers("authorization");
+    AuthData authData = userService.createUser(userData);
+    resp.status(200);
+    resp.type("application/json");
+    return gson.toJson(authData);
+}
 
-        if (authToken == null || authToken.isEmpty()) {
-            throw new DataAccessException("Unauthorized: missing auth token");
-        }
+public Object login(Request req, Response resp) throws DataAccessException {
+    UserData userData;
+    try {
+        userData = gson.fromJson(req.body(), UserData.class);
+    } catch (JsonSyntaxException e) {
+        throw new DataAccessException("Bad request: invalid JSON format");
+    }
 
-        userService.logoutUser(authToken);
+    if (userData.username() == null || userData.password() == null) {
+        throw new DataAccessException("Bad request: missing username or password");
+    }
 
-        resp.status(200);
-        resp.type("application/json");
-        return "{}";
+    AuthData authData = userService.loginUser(userData);
+    resp.status(200);
+    resp.type("application/json");
+    return gson.toJson(authData);
+}
+
+public Object logout(Request req, Response resp) throws DataAccessException {
+    String authToken = req.headers("authorization");
+    if (authToken == null || authToken.isEmpty()) {
+        throw new DataAccessException("Unauthorized: missing auth token");
+    }
+
+    userService.logoutUser(authToken);
+
+    resp.status(200);
+    resp.type("application/json");
+    return "{}";
     }
 }

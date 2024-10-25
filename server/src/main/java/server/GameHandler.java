@@ -22,7 +22,8 @@ public class GameHandler {
 
     public Object listGames(Request req, Response resp) throws DataAccessException {
         String authToken = req.headers("authorization");
-        List<GameData> games = (List<GameData>) gameService.listGames(authToken);
+        validateAuthToken(authToken);
+        List<GameData> games = gameService.listGames(authToken);
         resp.status(200);
         resp.type("application/json");
         // Return the list of games as a JSON object
@@ -41,6 +42,7 @@ public class GameHandler {
         }
 
         String authToken = req.headers("authorization");
+        validateAuthToken(authToken);
         int gameID = gameService.createGame(authToken, createRequest.getGameName());
 
         resp.status(200);
@@ -61,6 +63,7 @@ public class GameHandler {
         }
 
         String authToken = req.headers("authorization");
+        validateAuthToken(authToken);
         gameService.joinGame(authToken, joinRequest.getGameID(), joinRequest.getPlayerColor());
 
         resp.status(200);
@@ -85,6 +88,12 @@ public class GameHandler {
         public JoinGameRequest() {}
         public String getPlayerColor() { return playerColor; }
         public int getGameID() { return gameID; }
+    }
+
+    private void validateAuthToken(String authToken) throws DataAccessException {
+        if (authToken == null || authToken.isEmpty()) {
+            throw new DataAccessException("Unauthorized: missing auth token");
+        }
     }
 }
 
