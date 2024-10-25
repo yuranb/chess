@@ -39,7 +39,7 @@ public class GameServiceTest {
         DataAccessException exception = assertThrows(DataAccessException.class, () -> {
             gameService.createGame("invalidToken","Test Game");
         });
-        assertEquals("Invalid auth token", exception.getMessage());
+        assertEquals("Unauthorized: Invalid auth token", exception.getMessage());
     }
     @Test
     void testJoinGame_Success() throws DataAccessException {
@@ -69,7 +69,7 @@ public class GameServiceTest {
         DataAccessException exception = assertThrows(DataAccessException.class, () -> {
             gameService.joinGame(secondAuth.authToken(), gameID, "WHITE");
         });
-        assertEquals("WHITE spot is already taken", exception.getMessage());
+        assertEquals("Forbidden: WHITE spot is already taken", exception.getMessage());
     }
     @Test
     void testJoinGame_InvalidColor() throws DataAccessException {
@@ -78,14 +78,14 @@ public class GameServiceTest {
         DataAccessException exception = assertThrows(DataAccessException.class, () -> {
             gameService.joinGame(testAuth.authToken(), gameID, "Red");
         });
-        assertEquals("Invalid color Choice", exception.getMessage());
+        assertEquals("Bad request: Invalid color Choice", exception.getMessage());
     }
     @Test
     void testJoinGame_GameDNE() {
         DataAccessException exception = assertThrows(DataAccessException.class, () -> {
             gameService.joinGame(testAuth.authToken(), 999, "WHITE");
         });
-        assertEquals("Game does not exist", exception.getMessage());
+        assertEquals("Bad request: Game does not exist", exception.getMessage());
     }
     @Test
     void testJoinGame_InvalidAuthToken() throws DataAccessException {
@@ -94,7 +94,7 @@ public class GameServiceTest {
         DataAccessException exception = assertThrows(DataAccessException.class, () -> {
             gameService.joinGame("invalidToken", gameID, "WHITE");
         });
-        assertEquals("Invalid auth token", exception.getMessage());
+        assertEquals("Unauthorized: Invalid auth token", exception.getMessage());
     }
     @Test
     void testListGames_Success() throws DataAccessException {
@@ -116,7 +116,7 @@ public class GameServiceTest {
         DataAccessException exception = assertThrows(DataAccessException.class, () -> {
             gameService.listGames("invalidToken");
         });
-        assertEquals("Invalid auth token", exception.getMessage());
+        assertEquals("Unauthorized: Invalid auth token", exception.getMessage());
     }
     @Test
     void testClearData() throws DataAccessException {
