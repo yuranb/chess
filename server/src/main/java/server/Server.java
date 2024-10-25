@@ -1,36 +1,36 @@
 package server;
 
 import dataaccess.*;
-import service.GameService;
-import service.UserService;
+import service.*;
 import spark.*;
-
 import com.google.gson.Gson;
 import java.util.Map;
 
 public class Server {
 
-    UserDAO userDAO;
-    AuthDAO authDAO;
-    GameDAO gameDAO;
+    private final UserDAO userDAO;
+    private final AuthDAO authDAO;
+    private final GameDAO gameDAO;
 
-    UserService userService;
-    GameService gameService;
+    private final UserService userService;
+    private final GameService gameService;
 
-    UserHandler userHandler;
-    GameHandler gameHandler;
+    private final UserHandler userHandler;
+    private final GameHandler gameHandler;
+
     private final Gson gson = new Gson();
+
     public Server() {
 
-        userDAO = new MemoryUserDAO();
-        authDAO = new MemoryAuthDAO();
-        gameDAO = new MemoryGameDAO();
+        this.userDAO = new MemoryUserDAO();
+        this.authDAO = new MemoryAuthDAO();
+        this.gameDAO = new MemoryGameDAO();
 
-        userService = new UserService(userDAO, authDAO);
-        gameService = new GameService(gameDAO, authDAO);
+        this.userService = new UserService(userDAO, authDAO);
+        this.gameService = new GameService(gameDAO, authDAO);
 
-        userHandler = new UserHandler(userService);
-        gameHandler = new GameHandler(gameService);
+        this.userHandler = new UserHandler(userService);
+        this.gameHandler = new GameHandler(gameService);
     }
 
     public int run(int desiredPort) {
@@ -86,6 +86,7 @@ public class Server {
 
     private void genericExceptionHandler(Exception ex, Request req, Response resp) {
         resp.status(500);
+        resp.type("application/json");
         resp.body(gson.toJson(Map.of("message", "error: " + ex.getMessage())));
     }
 }
