@@ -20,10 +20,10 @@ public class Server {
 
     private final Gson gson = new Gson();
 
-    public Server() {
+    public Server() throws DataAccessException {
 
-        this.userDAO = new MemoryUserDAO();
-        this.authDAO = new MemoryAuthDAO();
+        this.userDAO = new SQLUserDAO();
+        this.authDAO = new SQLAuthDAO();
         this.gameDAO = new MemoryGameDAO();
 
         this.userService = new UserService(userDAO, authDAO);
