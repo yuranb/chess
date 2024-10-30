@@ -61,6 +61,9 @@ public class SQLUserDAO implements UserDAO {
     @Override
     public boolean authenticateUser(String username, String password) throws DataAccessException {
         UserData user = getUser(username);
+        if (user == null) {
+            return false;
+        }
         return passwordMatches(password, user.password());
     }
 
