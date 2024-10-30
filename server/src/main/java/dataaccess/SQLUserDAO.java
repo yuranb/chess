@@ -75,8 +75,11 @@ public class SQLUserDAO implements UserDAO {
             try (var ps = conn.prepareStatement(statement, Statement.RETURN_GENERATED_KEYS)) {
                 for (int i = 0; i < params.length; i++) {
                     var param = params[i];
-                    if (param instanceof String p) ps.setString(i + 1, p);
-                    else if (param == null) ps.setNull(i + 1, Types.NULL);
+                    if (param instanceof String p) {
+                        ps.setString(i + 1, p);
+                    }else if (param == null) {
+                        ps.setNull(i + 1, Types.NULL);
+                    }
                 }
                 ps.executeUpdate();
 
@@ -88,7 +91,7 @@ public class SQLUserDAO implements UserDAO {
                 return 0;
             }
         } catch (SQLException e) {
-            throw new DataAccessException("unable to update database:" + e.getMessage());
+            throw new DataAccessException("Error executing update:" + e.getMessage());
         }
     }
 
