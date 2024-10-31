@@ -76,7 +76,7 @@ public class SQLAuthDAO implements AuthDAO{
             CREATE TABLE IF NOT EXISTS auth (
                 username varchar(256) NOT NULL,
                 authToken varchar(256) NOT NULL,
-                PRIMARY KEY (autoToken)
+                PRIMARY KEY (authToken)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
             """
     };
