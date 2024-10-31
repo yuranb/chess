@@ -229,45 +229,20 @@ public class ChessGame {
      */
     public boolean isInCheckmate(TeamColor teamColor) {
         if (!isInCheck(teamColor)) {
-            return false; // 未被将军，不可能被将死
+            return false;
         }
 
-        // 遍历所有己方棋子，检查是否有任何合法移动可以解除将军
-        for (int row = 1; row <= 8; row++) {
-            for (int col = 1; col <= 8; col++) {
-                ChessPosition startPos = new ChessPosition(row, col);
-                ChessPiece piece = board.getPiece(startPos);
-                if (piece != null && piece.getTeamColor() == teamColor) {
-                    Collection<ChessMove> moves = validMoves(startPos);
-                    if (moves != null && !moves.isEmpty()) {
-                        return false; // 存在至少一个合法移动，可以解除将军
-                    }
-                }
-            }
-        }
-        return true; // 没有合法移动，处于将死状态
+        return hasValidMove(teamColor);
     }
 
     public boolean isInStalemate(TeamColor teamColor) {
         if (isInCheck(teamColor)) {
-            return false; // 被将军，不可能是僵局
-        }
+            return false;
 
-        // 检查是否有合法的移动
-        for (int row = 1; row <= 8; row++) {
-            for (int col = 1; col <= 8; col++) {
-                ChessPosition startPos = new ChessPosition(row, col);
-                ChessPiece piece = board.getPiece(startPos);
-                if (piece != null && piece.getTeamColor() == teamColor) {
-                    Collection<ChessMove> moves = validMoves(startPos);
-                    if (moves != null && !moves.isEmpty()) {
-                        return false; // 有合法移动所以不是僵局
-                    }
-                }
-            }
         }
-        return true; // 没有合法移动所以是僵局
+        return hasValidMove(teamColor);
     }
+
 
     /**
      * Sets this game's chessboard with a given board
@@ -285,5 +260,21 @@ public class ChessGame {
      */
     public ChessBoard getBoard() {
         return this.board;
+    }
+
+    private boolean hasValidMove(TeamColor teamColor) {
+        for (int row = 1; row <= 8; row++) {
+            for (int col = 1; col <= 8; col++) {
+                ChessPosition startPos = new ChessPosition(row, col);
+                ChessPiece piece = board.getPiece(startPos);
+                if (piece != null && piece.getTeamColor() == teamColor) {
+                    Collection<ChessMove> moves = validMoves(startPos);
+                    if (moves != null && !moves.isEmpty()) {
+                        return false; // 存在合法移动
+                    }
+                }
+            }
+        }
+        return true; // 没有合法移动
     }
 }
