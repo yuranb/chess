@@ -80,17 +80,17 @@ public class ChessGame {
         List<ChessMove> legalMoves = new ArrayList<>();
 
         for (ChessMove move : potentialMoves) {
-            // 模拟执行
+
             ChessPiece capturedPiece = board.getPiece(move.getEndPosition());
             board.clearPiece(startPosition);
             board.addPiece(move.getEndPosition(), movingPiece);
 
-            // 如果移动后未将军，则添加为合法移动
+            // If the move is not generalized, add it as a legal move
             if (!isInCheck(movingPiece.getTeamColor())) {
                 legalMoves.add(move);
             }
 
-            // 撤销移动
+            // Undo the move
             board.addPiece(startPosition, movingPiece);
             if (capturedPiece != null) {
                 board.addPiece(move.getEndPosition(), capturedPiece);
@@ -128,16 +128,15 @@ public class ChessGame {
         board.clearPiece(move.getStartPosition());
 
         if (move.getPromotionPiece() != null) {
-            // 处理升变
             ChessPiece promotedPiece = new ChessPiece(turn, move.getPromotionPiece());
             board.addPiece(move.getEndPosition(), promotedPiece);
         } else {
             board.addPiece(move.getEndPosition(), currentPiece);
         }
 
-        // 检查移动后是否使自己被将军
+        // Check if generalized after moving
         if (isInCheck(turn)) {
-            // 撤销移动
+            // undo the move
             board.addPiece(move.getStartPosition(), currentPiece);
             if (capturedPiece != null) {
                 board.addPiece(move.getEndPosition(), capturedPiece);
@@ -147,7 +146,6 @@ public class ChessGame {
             throw new InvalidMoveException("Your side remains in Check after moving.");
         }
 
-        // 切换回合
         switchTurn();
     }
 
@@ -173,17 +171,19 @@ public class ChessGame {
 
         TeamColor enemyColor = getEnemyColor(teamColor);
 
-        // 检查所有敌方棋子的移动是否可以攻击国王
+        // Iterate through the movement to see if the king can be attacked
         for (int row = 1; row <= 8; row++) {
             for (int col = 1; col <= 8; col++) {
                 ChessPosition position = new ChessPosition(row, col);
                 ChessPiece piece = board.getPiece(position);
-                if (piece != null && piece.getTeamColor() == enemyColor) {
-                    Collection<ChessMove> moves = piece.pieceMoves(board, position);
-                    for (ChessMove move : moves) {
-                        if (move.getEndPosition().equals(kingPosition)) {
-                            return true; // 被将军
-                        }
+
+                if (piece == null || piece.getTeamColor() != enemyColor) {
+                    continue;
+                }
+
+                for (ChessMove move : piece.pieceMoves(board, position)) {
+                    if (move.getEndPosition().equals(kingPosition)) {
+                        return true;
                     }
                 }
             }
@@ -270,11 +270,11 @@ public class ChessGame {
                 if (piece != null && piece.getTeamColor() == teamColor) {
                     Collection<ChessMove> moves = validMoves(startPos);
                     if (moves != null && !moves.isEmpty()) {
-                        return false; // 存在合法移动
+                        return false; // there is a legal movement
                     }
                 }
             }
         }
-        return true; // 没有合法移动
+        return true; // there is not a legal movement
     }
 }
