@@ -91,6 +91,11 @@ public class SQLGameDAOTest {
         GameData updatedGame = new GameData(1, "pp", "pp2", "Updated Game", new ChessGame());
         gameDAO.updateGame(updatedGame);
 
+        GameData retrievedGame = gameDAO.getGame(1);
+        assertNotNull(retrievedGame);
+        assertEquals("pp2", retrievedGame.blackUsername());
+        assertEquals("Updated Game", retrievedGame.gameName());
+        assertNotNull(retrievedGame.game());
     }
 
     // Updating games that don't exist
@@ -98,6 +103,8 @@ public class SQLGameDAOTest {
     public void testUpdateGameFailure() throws DataAccessException {
         GameData gameData = new GameData(99999999, "pp", "pp2", "Non-existent Game", null);
 
+        assertThrows(DataAccessException.class, () -> gameDAO.updateGame(gameData),
+                "non-existent gameID");
     }
 
     @Test
