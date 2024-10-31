@@ -49,7 +49,7 @@ public class SQLUserDAOTest {
     @Test
     public void testGetUserFailure() throws DataAccessException {
         UserData retrievedUser = userDAO.getUser("nonExistentUser");
-        assertNull(retrievedUser, "Expected null user");
+        assertNull(retrievedUser, "non-existent user");
     }
 
     @Test
