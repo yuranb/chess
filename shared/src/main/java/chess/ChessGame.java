@@ -248,10 +248,6 @@ public class ChessGame {
         return true; // 没有合法移动，处于将死状态
     }
 
-    /**
-     * Determines if the given team is in stalemate, which here is defined as having     * no valid moves     *     * @param teamColor which team to check for stalemate
-     * @return True if the specified team is in stalemate, otherwise false
-     */
     public boolean isInStalemate(TeamColor teamColor) {
         if (isInCheck(teamColor)) {
             return false; // 被将军，不可能是僵局
