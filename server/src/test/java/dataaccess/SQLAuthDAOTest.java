@@ -16,13 +16,7 @@ public class SQLAuthDAOTest {
 
     @Test
     public void testCreateAuthSuccess() throws DataAccessException {
-        AuthData authData = new AuthData("token123", "pp");
-        authDAO.createAuth(authData);
-
-        AuthData retrievedAuth = authDAO.getAuth("token123");
-        assertNotNull(retrievedAuth);
-        assertEquals("token123", retrievedAuth.authToken());
-        assertEquals("pp", retrievedAuth.username());
+        VerifyAuth("token123", "pp");
     }
 
     @Test
@@ -37,13 +31,7 @@ public class SQLAuthDAOTest {
 
     @Test
     public void testGetAuthSuccess() throws DataAccessException {
-        AuthData authData = new AuthData("token123", "pp");
-        authDAO.createAuth(authData);
-
-        AuthData retrievedAuth = authDAO.getAuth("token123");
-        assertNotNull(retrievedAuth);
-        assertEquals("token123", retrievedAuth.authToken());
-        assertEquals("pp", retrievedAuth.username());
+        VerifyAuth("token123", "pp");
     }
 
     @Test
@@ -76,5 +64,15 @@ public class SQLAuthDAOTest {
 
         AuthData retrievedAuth = authDAO.getAuth("token123");
         assertNull(retrievedAuth, "data be cleared");
+    }
+
+    private void VerifyAuth(String token, String username) throws DataAccessException {
+        AuthData authData = new AuthData(token, username);
+        authDAO.createAuth(authData);
+
+        AuthData retrievedAuth = authDAO.getAuth(token);
+        assertNotNull(retrievedAuth);
+        assertEquals(token, retrievedAuth.authToken());
+        assertEquals(username, retrievedAuth.username());
     }
 }
