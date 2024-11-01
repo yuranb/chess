@@ -6,13 +6,13 @@ import java.sql.*;
 public class SQLAuthDAO implements AuthDAO{
 
     public SQLAuthDAO() throws DataAccessException {
-        configureDatabase();
+        DatabaseManager.configureDatabase(createStatements);
     }
 
     @Override
     public void createAuth(AuthData auth) throws DataAccessException {
         String statement = "INSERT INTO auth (authToken, username) VALUES (?, ?)";
-        executeUpdate(statement, auth.authToken(), auth.username());
+        DatabaseManager.executeUpdate(statement, auth.authToken(), auth.username());
     }
 
     @Override
@@ -37,38 +37,13 @@ public class SQLAuthDAO implements AuthDAO{
     @Override
     public void deleteAuth(String authToken) throws DataAccessException {
         String statement = "DELETE FROM auth WHERE authToken = ?";
-        executeUpdate(statement, authToken);
+        DatabaseManager.executeUpdate(statement, authToken);
     }
 
     @Override
     public void clear() throws DataAccessException {
         String statement = "TRUNCATE auth";
-        executeUpdate(statement);
-    }
-
-    private int executeUpdate(String statement, Object... params) throws DataAccessException {
-        try (var conn = DatabaseManager.getConnection()) {
-            try (var ps = conn.prepareStatement(statement, Statement.RETURN_GENERATED_KEYS)) {
-                for (int i = 0; i < params.length; i++) {
-                    var param = params[i];
-                    if (param instanceof String p) {
-                        ps.setString(i + 1, p);
-                    }else if (param == null) {
-                        ps.setNull(i + 1, Types.NULL);
-                    }
-                }
-                ps.executeUpdate();
-
-                try (var rs = ps.getGeneratedKeys()) {
-                    if (rs.next()) {
-                        return rs.getInt(1);
-                    }
-                }
-                return 0;
-            }
-        } catch (SQLException e) {
-            throw new DataAccessException("Error executing update:" + e.getMessage());
-        }
+        DatabaseManager.executeUpdate(statement);
     }
 
     private final String[] createStatements = {
@@ -80,16 +55,5 @@ public class SQLAuthDAO implements AuthDAO{
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
             """
     };
-    private void configureDatabase() throws DataAccessException {
-        DatabaseManager.createDatabase();
-        try (var conn = DatabaseManager.getConnection()) {
-            for (var statement : createStatements) {
-                try (var preparedStatement = conn.prepareStatement(statement)) {
-                    preparedStatement.executeUpdate();
-                }
-            }
-        } catch (SQLException ex) {
-            throw new DataAccessException(String.format("Unable to configure database: %s", ex.getMessage()));
-        }
-    }
+
 }

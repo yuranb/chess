@@ -7,7 +7,7 @@ import java.sql.*;
 public class SQLUserDAO implements UserDAO {
 
     public SQLUserDAO() throws DataAccessException {
-        configureDatabase();
+        DatabaseManager.configureDatabase(createStatements);
     }
 
     @Override
@@ -25,7 +25,7 @@ public class SQLUserDAO implements UserDAO {
         }
 
         String hashedPassword = hashPassword(password);
-        executeUpdate(statement, username, hashedPassword, email);
+        DatabaseManager.executeUpdate(statement, username, hashedPassword, email);
     }
 
     private String hashPassword(String password) {
@@ -70,32 +70,7 @@ public class SQLUserDAO implements UserDAO {
     @Override
     public void clear() throws DataAccessException {
         String statement = "TRUNCATE user";
-        executeUpdate(statement);
-    }
-
-    private int executeUpdate(String statement, Object... params) throws DataAccessException {
-        try (var conn = DatabaseManager.getConnection()) {
-            try (var ps = conn.prepareStatement(statement, Statement.RETURN_GENERATED_KEYS)) {
-                for (int i = 0; i < params.length; i++) {
-                    var param = params[i];
-                    if (param instanceof String p) {
-                        ps.setString(i + 1, p);
-                    }else if (param == null) {
-                        ps.setNull(i + 1, Types.NULL);
-                    }
-                }
-                ps.executeUpdate();
-
-                try (var rs = ps.getGeneratedKeys()) {
-                    if (rs.next()) {
-                        return rs.getInt(1);
-                    }
-                }
-                return 0;
-            }
-        } catch (SQLException e) {
-            throw new DataAccessException("Error executing update:" + e.getMessage());
-        }
+        DatabaseManager.executeUpdate(statement);
     }
 
     private final String[] createStatements = {
@@ -108,17 +83,4 @@ public class SQLUserDAO implements UserDAO {
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
             """
     };
-
-    private void configureDatabase() throws DataAccessException {
-        DatabaseManager.createDatabase();
-        try (var conn = DatabaseManager.getConnection()) {
-            for (var statement : createStatements) {
-                try (var preparedStatement = conn.prepareStatement(statement)) {
-                    preparedStatement.executeUpdate();
-                }
-            }
-        } catch (SQLException ex) {
-            throw new DataAccessException(String.format("Unable to configure database: %s", ex.getMessage()));
-        }
-    }
 }
