@@ -20,17 +20,20 @@ public class Server {
 
     private final Gson gson = new Gson();
 
-    public Server() throws DataAccessException {
+    public Server() {
+        try{
+            this.userDAO = new SQLUserDAO();
+            this.authDAO = new SQLAuthDAO();
+            this.gameDAO = new SQLGameDAO();
 
-        this.userDAO = new SQLUserDAO();
-        this.authDAO = new SQLAuthDAO();
-        this.gameDAO = new SQLGameDAO();
+            this.userService = new UserService(userDAO, authDAO);
+            this.gameService = new GameService(gameDAO, authDAO);
 
-        this.userService = new UserService(userDAO, authDAO);
-        this.gameService = new GameService(gameDAO, authDAO);
-
-        this.userHandler = new UserHandler(userService);
-        this.gameHandler = new GameHandler(gameService);
+            this.userHandler = new UserHandler(userService);
+            this.gameHandler = new GameHandler(gameService);
+        } catch (DataAccessException e) {
+            throw new RuntimeException("Failed to initialize server: " + e.getMessage());
+        }
     }
 
     public int run(int desiredPort) {
