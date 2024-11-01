@@ -16,7 +16,7 @@ public class SQLAuthDAOTest {
 
     @Test
     public void testCreateAuthSuccess() throws DataAccessException {
-        VerifyAuth("token123", "pp");
+        verifyAuth("token123", "pp");
     }
 
     @Test
@@ -31,7 +31,7 @@ public class SQLAuthDAOTest {
 
     @Test
     public void testGetAuthSuccess() throws DataAccessException {
-        VerifyAuth("token123", "pp");
+        verifyAuth("token123", "pp");
     }
 
     @Test
@@ -66,7 +66,7 @@ public class SQLAuthDAOTest {
         assertNull(retrievedAuth, "data be cleared");
     }
 
-    private void VerifyAuth(String token, String username) throws DataAccessException {
+    private void verifyAuth(String token, String username) throws DataAccessException {
         AuthData authData = new AuthData(token, username);
         authDAO.createAuth(authData);
 
