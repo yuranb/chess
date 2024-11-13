@@ -7,6 +7,7 @@ import model.*;
 import java.io.*;
 import java.net.*;
 import java.util.List;
+import java.util.Map;
 
 public class ServerFacade {
 
@@ -34,13 +35,26 @@ public class ServerFacade {
         this.authToken = authData.authToken();
         return authData;
     }
-    public void logout(String authToken) throws ResponseException {
+
+    //Logout
+    public void logout() throws ResponseException {
+        var path = "/session";
+        this.makeRequest("DELETE", path, null, null);
+        this.authToken = null;
     }
-    public GameData createGame(String gameName, String authToken) throws ResponseException {
-        return null;
+
+    //CreateGame
+    public GameData createGame(String gameName) throws ResponseException {
+        var path = "/game";
+        var request = Map.of("gameName", gameName);
+        return this.makeRequest("POST", path, request, GameData.class);
     }
-    public List<GameData> listGames(String authToken) throws ResponseException {
-        return List.of();
+
+    //ListGames
+    public List<GameData> listGames() throws ResponseException {
+        var path = "/game";
+        GameData[] games = this.makeRequest("GET", path, null, GameData[].class);
+        return List.of(games);
     }
     public GameData playGame(int gameID, String color, String authToken) throws ResponseException {
         return null;
