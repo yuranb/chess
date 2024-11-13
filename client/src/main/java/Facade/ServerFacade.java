@@ -56,8 +56,12 @@ public class ServerFacade {
         GameData[] games = this.makeRequest("GET", path, null, GameData[].class);
         return List.of(games);
     }
-    public GameData playGame(int gameID, String color, String authToken) throws ResponseException {
-        return null;
+
+    //Join Game
+    public GameData playGame(int gameID, String color) throws ResponseException {
+        var path = "/game";
+        var request = Map.of("gameID", gameID, "color", color);
+        return this.makeRequest("PUT", path, request, GameData.class);
     }
     public GameData observeGame(int gameID, String authToken) throws ResponseException {
         return null;
