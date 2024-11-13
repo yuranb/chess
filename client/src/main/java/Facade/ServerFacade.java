@@ -11,6 +11,7 @@ import java.util.List;
 public class ServerFacade {
 
     private final String serverUrl;
+    private String authToken = null;
 
     public ServerFacade(String url) {
         serverUrl = url;
@@ -18,14 +19,20 @@ public class ServerFacade {
 
     //Register a new user
     public AuthData register(String username, String password, String email) throws ResponseException {
-        var path = "/user/register";
+        var path = "/user";
         UserData userData = new UserData(username, password, email);
-        return this.makeRequest("POST", path, userData, AuthData.class);
+        AuthData authData = this.makeRequest("POST", path, userData, AuthData.class);
+        this.authToken = authData.authToken();
+        return authData;
     }
 
-
+    //Login
     public AuthData login(String username, String password) throws ResponseException {
-        return null;
+        var path = "/session";
+        UserData userData = new UserData(username, password, null);
+        AuthData authData = this.makeRequest("POST", path, userData, AuthData.class);
+        this.authToken = authData.authToken();
+        return authData;
     }
     public void logout(String authToken) throws ResponseException {
     }
@@ -35,7 +42,10 @@ public class ServerFacade {
     public List<GameData> listGames(String authToken) throws ResponseException {
         return List.of();
     }
-    public GameData joinGame(int gameID, String color, String authToken) throws ResponseException {
+    public GameData playGame(int gameID, String color, String authToken) throws ResponseException {
+        return null;
+    }
+    public GameData observeGame(int gameID, String authToken) throws ResponseException {
         return null;
     }
 
@@ -45,6 +55,10 @@ public class ServerFacade {
             HttpURLConnection http = (HttpURLConnection) url.openConnection();
             http.setRequestMethod(method);
             http.setDoOutput(true);
+
+            if (this.authToken != null) {
+                http.setRequestProperty("Authorization", this.authToken);
+            }
 
             writeBody(request, http);
             http.connect();
