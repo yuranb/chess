@@ -63,9 +63,9 @@ public class ServerFacade {
         var request = Map.of("gameID", gameID, "color", color);
         return this.makeRequest("PUT", path, request, GameData.class);
     }
-    public GameData observeGame(int gameID, String authToken) throws ResponseException {
+    /*public GameData observeGame(int gameID, String authToken) throws ResponseException {
         return null;
-    }
+    }*/
 
     private <T> T makeRequest(String method, String path, Object request, Class<T> responseClass) throws ResponseException {
         try {

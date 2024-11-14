@@ -2,6 +2,9 @@ package ui;
 
 import Facade.ServerFacade;
 import exception.ResponseException;
+import model.GameData;
+
+import java.util.List;
 import java.util.Scanner;
 
 public class Repl {
@@ -121,32 +124,94 @@ public class Repl {
                 return listGames();
             case "play":
                 return playGame(input);
-            case "observe":
-                return observeGame(input);
+            /*case "observe":
+                return observeGame(input);*/
             case "quit":
                 return false;
             default:
-                System.out.println("Unknown command. Type 'help' for available commands.");
+                System.out.println("Unknown command. Type 'help' to see available commands.");
         }
         return true;
     }
 
-    private boolean observeGame(String[] input) {
-    }
+    /*private boolean observeGame(String[] input) {
+    }*/
 
     private boolean playGame(String[] input) {
+        if (input.length < 2) {
+            System.out.println("Usage: play <gameID> ['WHITE' or 'BLACK']");
+            return true;
+        }
+        int gameID;
+        try {
+            gameID = Integer.parseInt(input[1]);
+        } catch (NumberFormatException e) {
+            System.out.println("Invalid gameID.");
+            return true;
+        }
+        String color = input.length >= 3 ? input[2] : null;
+        try {
+            GameData game = server.playGame(gameID, color);
+            System.out.println("Joined game ID: " + game.gameID());
+            return true;
+        } catch (ResponseException e) {
+            System.out.println("Failed to join game: " + e.getMessage());
+            return true;
+        }
     }
 
     private boolean listGames() {
+        try {
+            List<GameData> games = server.listGames();
+            if (games.isEmpty()) {
+                System.out.println("No games available.");
+            } else {
+                System.out.println("Available games:");
+                for (GameData game : games) {
+                    System.out.println("ID: " + game.gameID() + ", Name: " + game.gameName());
+                }
+            }
+            return true;
+        } catch (ResponseException e) {
+            System.out.println("Failed to list games: " + e.getMessage());
+            return true;
+        }
     }
 
     private boolean createGame(String[] input) {
+        if (input.length < 2) {
+            System.out.println("Usage: create <gameName>");
+            return true;
+        }
+        String gameName = input[1];
+        try {
+            GameData game = server.createGame(gameName);
+            System.out.println("Game created with ID: " + game.gameID());
+            return true;
+        } catch (ResponseException e) {
+            System.out.println("Failed to create game: " + e.getMessage());
+            return true;
+        }
     }
 
     private void printPostLoginHelp() {
+        System.out.println("create <gameName> - Create a new game");
+        System.out.println("list - List available games");
+        System.out.println("play <gameID> [color] - Join a game as a player");
+        System.out.println("logout - Log out of your account");
+        System.out.println("help - Show this help page");
+        System.out.println("quit - Exit the client");
     }
 
     private boolean logout() {
+        try {
+            server.logout();
+            System.out.println("Logged out successfully.");
+            state = ReplState.PRE_LOGIN;
+            return true;
+        } catch (ResponseException e) {
+            System.out.println("Logout failed: " + e.getMessage());
+            return true;
+        }
     }
-
 }
