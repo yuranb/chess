@@ -6,6 +6,8 @@ import model.GameData;
 
 import java.util.List;
 import java.util.Scanner;
+import java.util.Map;
+import java.util.HashMap;
 
 public class Repl {
 
@@ -35,7 +37,6 @@ public class Repl {
                     running = handlePreLogin();
                     break;
                 case POST_LOGIN:
-                    System.out.println("You are now logged in.");
                     running = handlePostLogin();
                     break;
             }
@@ -124,8 +125,8 @@ public class Repl {
                 return listGames();
             case "play":
                 return playGame(input);
-            /*case "observe":
-                return observeGame(input);*/
+            case "observe":
+                return observeGame(input);
             case "quit":
                 return false;
             default:
@@ -134,13 +135,33 @@ public class Repl {
         return true;
     }
 
-    /*private boolean observeGame(String[] input) {
-    }*/
+    private boolean observeGame(String[] input) {
+        int gameID;
+        try {
+            gameID = Integer.parseInt(input[1]);
+        } catch (NumberFormatException e) {
+            System.out.println("Invalid gameID.");
+            return true;
+        }
+
+        try {
+            server.playGame(gameID, null);
+            System.out.println("Successfully joined game " + gameID + " as observer");
+            return true;
+        } catch (ResponseException e) {
+            System.out.println("Failed to join game: " + e.getMessage());
+            return true;
+        }
+    }
 
     private boolean playGame(String[] input) {
         if (input.length < 2) {
             System.out.println("Usage: play <gameID> [color]");
             return true;
+        }
+        // if no color is chosed, call the observeGame
+        if (input.length == 2) {
+            return observeGame(input);
         }
         int gameID;
         try {
@@ -149,10 +170,11 @@ public class Repl {
             System.out.println("Invalid gameID.");
             return true;
         }
-        String color = input.length >= 3 ? input[2] : null;
+
+        String color = input[2];
         try {
-            GameData game = server.playGame(gameID, color);
-            System.out.println("Joined game ID: " + game.gameID());
+            server.playGame(gameID, color);
+            System.out.println("Successfully joined game " + gameID + " as " + color);
             return true;
         } catch (ResponseException e) {
             System.out.println("Failed to join game: " + e.getMessage());
@@ -168,7 +190,11 @@ public class Repl {
             } else {
                 System.out.println("Available games:");
                 for (GameData game : games) {
-                    System.out.println("ID: " + game.gameID() + ", Name: " + game.gameName());
+                    System.out.printf("GameID: %-6d | GameName: %-20s | WHITE: %-10s | BLCAK: %-10s%n",
+                            game.gameID(),
+                            game.gameName(),
+                            game.whiteUsername() != null ? game.whiteUsername() : "<->",
+                            game.blackUsername() != null ? game.blackUsername() : "<->");
                 }
             }
             return true;
@@ -197,7 +223,7 @@ public class Repl {
     private void printPostLoginHelp() {
         System.out.println("create <gameName> - Create a new game");
         System.out.println("list - List available games");
-        System.out.println("play <gameID> [color] - Join a game as a player");
+        System.out.println("play <gameID> [WHITE|BLACK] - Join a game as a player");
         System.out.println("logout - Log out of your account");
         System.out.println("help - Show this help page");
         System.out.println("quit - Exit the client");
