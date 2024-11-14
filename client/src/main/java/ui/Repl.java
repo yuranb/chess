@@ -123,8 +123,8 @@ public class Repl {
                 return listGames();
             case "play":
                 return playGame(input);
-            case "observe":
-                return observeGame(input);
+            /*case "observe":
+                return observeGame(input);*/
             case "quit":
                 return false;
             default:
@@ -133,11 +133,10 @@ public class Repl {
         return true;
     }
 
-    private boolean observeGame(String[] input) {
-        String gameID;
+    /*private boolean observeGame(String[] input) {
+        int gameID;
         try {
-            gameID = input[1];
-            Integer.parseInt(gameID);
+            gameID = Integer.parseInt(input[1]);
         } catch (NumberFormatException e) {
             System.out.println("Invalid gameID.");
             return true;
@@ -146,12 +145,13 @@ public class Repl {
         try {
             server.playGame(gameID, null);
             System.out.println("Successfully joined game " + gameID + " as observer");
+            new ChessBoardUI().display();
             return true;
         } catch (ResponseException e) {
             System.out.println("Failed to join game: " + e.getMessage());
             return true;
         }
-    }
+    }*/
 
     private boolean playGame(String[] input) {
         if (input.length < 2) {
@@ -159,13 +159,12 @@ public class Repl {
             return true;
         }
         // if no color is chosed, call the observeGame
-        if (input.length == 2) {
+        /*if (input.length == 2) {
             return observeGame(input);
-        }
-        String gameID;
+        }*/
+        int gameID;
         try {
-            gameID = input[1];
-            Integer.parseInt(gameID);
+            gameID = Integer.parseInt(input[1]);
         } catch (NumberFormatException e) {
             System.out.println("Invalid gameID.");
             return true;
