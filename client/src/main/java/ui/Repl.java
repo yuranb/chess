@@ -4,8 +4,6 @@ import Facade.ServerFacade;
 import exception.ResponseException;
 import java.util.Scanner;
 
-import static java.awt.Color.RED;
-
 public class Repl {
 
     private enum ReplState {
@@ -25,7 +23,7 @@ public class Repl {
 
     // Repl loop
     public void run() {
-        System.out.println("\u265F Welcome to Chess Client! Please sign in to continue.");
+        System.out.println("\u265F Welcome to Chess Client! Type 'help' to see available commands.");
 
         boolean running = true;
         while (running) {
@@ -34,9 +32,12 @@ public class Repl {
                     running = handlePreLogin();
                     break;
                 case POST_LOGIN:
+                    System.out.println("You are now logged in.");
+                    running = handlePostLogin();
                     break;
             }
         }
+        System.out.println("Goodbye!");
     }
 
     private boolean handlePreLogin() {
@@ -57,16 +58,25 @@ public class Repl {
                 printPreLoginHelp();
                 break;
             default:
-                System.out.println(RED + "Unknown command. Type 'help' for available commands.");
+                System.out.println( "Unknown command. Type 'help' to see available commands.");
         }
         return true;
     }
 
     private boolean register(String[] input) {
-        return false;
-    }
-
-    private void printPreLoginHelp() {
+        if (input.length < 4) {
+            System.out.println("Usage: register <username> <password> <email>");
+            return true;
+        }
+        try {
+            server.register(input[1], input[2], input[3]);
+            System.out.println("Registration successful. You are now logged in.");
+            state = ReplState.POST_LOGIN; // Move to Post login state
+            return true;
+        } catch (ResponseException e) {
+            System.out.println("Registration failed: " + e.getMessage());
+            return true;
+        }
     }
 
     private boolean login(String[] input) {
@@ -76,7 +86,7 @@ public class Repl {
         }
         try {
             server.login(input[1], input[2]);
-            System.out.println("Login successful.");
+            System.out.println("Login successful. You are now logged in.");
             state = ReplState.POST_LOGIN;
             return true;
         } catch (ResponseException e) {
@@ -84,4 +94,59 @@ public class Repl {
             return true;
         }
     }
+
+    private void printPreLoginHelp() {
+        System.out.println("register <username> <password> <email> - Register a new user");
+        System.out.println("login <username> <password> - Log in with an existing account");
+        System.out.println("help - Show this help page");
+        System.out.println("quit - Exit the client");
+    }
+
+    private boolean handlePostLogin() {
+        System.out.print("[POST-LOGIN] >>> ");
+        String[] input = scanner.nextLine().split(" ");
+        if (input.length == 0) return true;
+
+        String command = input[0].toLowerCase();
+
+        switch (command) {
+            case "logout":
+                return logout();
+            case "help":
+                printPostLoginHelp();
+                break;
+            case "create":
+                return createGame(input);
+            case "list":
+                return listGames();
+            case "play":
+                return playGame(input);
+            case "observe":
+                return observeGame(input);
+            case "quit":
+                return false;
+            default:
+                System.out.println("Unknown command. Type 'help' for available commands.");
+        }
+        return true;
+    }
+
+    private boolean observeGame(String[] input) {
+    }
+
+    private boolean playGame(String[] input) {
+    }
+
+    private boolean listGames() {
+    }
+
+    private boolean createGame(String[] input) {
+    }
+
+    private void printPostLoginHelp() {
+    }
+
+    private boolean logout() {
+    }
+
 }
