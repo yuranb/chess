@@ -6,8 +6,6 @@ import model.GameData;
 
 import java.util.List;
 import java.util.Scanner;
-import java.util.Map;
-import java.util.HashMap;
 
 public class Repl {
 
@@ -136,9 +134,10 @@ public class Repl {
     }
 
     private boolean observeGame(String[] input) {
-        int gameID;
+        String gameID;
         try {
-            gameID = Integer.parseInt(input[1]);
+            gameID = input[1];
+            Integer.parseInt(gameID);
         } catch (NumberFormatException e) {
             System.out.println("Invalid gameID.");
             return true;
@@ -163,9 +162,10 @@ public class Repl {
         if (input.length == 2) {
             return observeGame(input);
         }
-        int gameID;
+        String gameID;
         try {
-            gameID = Integer.parseInt(input[1]);
+            gameID = input[1];
+            Integer.parseInt(gameID);
         } catch (NumberFormatException e) {
             System.out.println("Invalid gameID.");
             return true;
@@ -175,6 +175,7 @@ public class Repl {
         try {
             server.playGame(gameID, color);
             System.out.println("Successfully joined game " + gameID + " as " + color);
+            new ChessBoardUI().display();
             return true;
         } catch (ResponseException e) {
             System.out.println("Failed to join game: " + e.getMessage());

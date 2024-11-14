@@ -47,7 +47,8 @@ public class ServerFacade {
     //CreateGame
     public GameData createGame(String gameName) throws ResponseException {
         var path = "/game";
-        var request = Map.of("gameName", gameName);
+        Map<String, String> request = new HashMap<>();
+        request.put("gameName", gameName);
         return this.makeRequest("POST", path, request, GameData.class);
     }
 
@@ -59,11 +60,11 @@ public class ServerFacade {
     }
 
     //Join Game
-    public GameData playGame(int gameID, String playerColor) throws ResponseException {
+    public GameData playGame(String gameName, String playerColor) throws ResponseException {
         var path = "/game";
-        Map<String, Object> request = new HashMap<>();
+        Map<String, String> request = new HashMap<>();
         request.put("playerColor", playerColor);
-        request.put("gameID", gameID);
+        request.put("gameName", gameName);
 
         this.makeRequest("PUT", path, request, null);
         return null;
