@@ -6,6 +6,7 @@ import model.*;
 
 import java.io.*;
 import java.net.*;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -53,8 +54,8 @@ public class ServerFacade {
     //ListGames
     public List<GameData> listGames() throws ResponseException {
         var path = "/game";
-        GameData[] games = this.makeRequest("GET", path, null, GameData[].class);
-        return List.of(games);
+        GameList gamesList = this.makeRequest("GET", path, null, GameList.class);
+        return gamesList.getGames();
     }
 
     //Join Game

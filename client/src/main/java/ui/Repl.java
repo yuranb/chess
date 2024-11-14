@@ -139,7 +139,7 @@ public class Repl {
 
     private boolean playGame(String[] input) {
         if (input.length < 2) {
-            System.out.println("Usage: play <gameID> ['WHITE' or 'BLACK']");
+            System.out.println("Usage: play <gameID> [color]");
             return true;
         }
         int gameID;
