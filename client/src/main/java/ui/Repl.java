@@ -1,6 +1,6 @@
 package ui;
 
-import Facade.ServerFacade;
+import facade.ServerFacade;
 import exception.ResponseException;
 import model.GameData;
 
@@ -26,7 +26,7 @@ public class Repl {
 
     // Repl loop
     public void run() {
-        System.out.println("\u265F Welcome to Chess Client! Type 'help' to see available commands.");
+        System.out.println("Please log your account, Type 'help' to see available commands.");
 
         boolean running = true;
         while (running) {
@@ -45,7 +45,9 @@ public class Repl {
     private boolean handlePreLogin() {
         System.out.print("[PRE-LOGIN] >>> ");
         String[] input = scanner.nextLine().split(" ");
-        if (input.length == 0) return true;
+        if (input.length == 0) {
+            return true;
+        }
 
         String command = input[0].toLowerCase();
 
@@ -107,7 +109,9 @@ public class Repl {
     private boolean handlePostLogin() {
         System.out.print("[POST-LOGIN] >>> ");
         String[] input = scanner.nextLine().split(" ");
-        if (input.length == 0) return true;
+        if (input.length == 0) {
+            return true;
+        }
 
         String command = input[0].toLowerCase();
 
