@@ -123,8 +123,8 @@ public class Repl {
                 return listGames();
             case "play":
                 return playGame(input);
-            /*case "observe":
-                return observeGame(input);*/
+            case "observe":
+                return observeGame(input);
             case "quit":
                 return false;
             default:
@@ -133,35 +133,30 @@ public class Repl {
         return true;
     }
 
-    /*private boolean observeGame(String[] input) {
-        int gameID;
-        try {
-            gameID = Integer.parseInt(input[1]);
-        } catch (NumberFormatException e) {
-            System.out.println("Invalid gameID.");
+    private boolean observeGame(String[] input) {
+        if (input.length != 2) {
+            System.out.println("Please provide a game ID");
+            System.out.println("observe <ID> - observe a game");
             return true;
         }
 
         try {
-            server.playGame(gameID, null);
+            int gameID = Integer.parseInt(input[1]);
             System.out.println("Successfully joined game " + gameID + " as observer");
             new ChessBoardUI().display();
             return true;
-        } catch (ResponseException e) {
-            System.out.println("Failed to join game: " + e.getMessage());
+        } catch (NumberFormatException e) {
+            System.out.println("Invalid game ID format");
             return true;
         }
-    }*/
+    }
 
     private boolean playGame(String[] input) {
         if (input.length < 2) {
             System.out.println("Usage: play <gameID> [color]");
             return true;
         }
-        // if no color is chosed, call the observeGame
-        /*if (input.length == 2) {
-            return observeGame(input);
-        }*/
+
         int gameID;
         try {
             gameID = Integer.parseInt(input[1]);

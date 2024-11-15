@@ -69,16 +69,12 @@ public class ServerFacade {
         this.makeRequest("PUT", path, request, null);
         return null;
     }
-    public GameData observeGame(int gameID) throws ResponseException {
-        var path = "/game";
-        Map<String, Object> request = new HashMap<>();
-        request.put("gameID", gameID);
 
-        this.makeRequest("PUT", path, request, null);
-        return null;
+    public void clear() throws Exception {
+        this.makeRequest("DELETE", "/db", null, null);
     }
 
-    private <T> T makeRequest(String method, String path, Object request, Class<T> responseClass) throws ResponseException {
+    public <T> T makeRequest(String method, String path, Object request, Class<T> responseClass) throws ResponseException {
         try {
             URL url = (new URI(serverUrl + path)).toURL();
             HttpURLConnection http = (HttpURLConnection) url.openConnection();
