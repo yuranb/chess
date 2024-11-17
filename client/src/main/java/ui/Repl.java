@@ -78,7 +78,7 @@ public class Repl {
             state = ReplState.POST_LOGIN; // Move to Post login state
             return true;
         } catch (ResponseException e) {
-            System.out.println("Registration failed: " + e.getMessage());
+            System.out.println("This username is already taken. Please choose a different one.");
             return true;
         }
     }
@@ -94,7 +94,7 @@ public class Repl {
             state = ReplState.POST_LOGIN;
             return true;
         } catch (ResponseException e) {
-            System.out.println("Login failed: " + e.getMessage());
+            System.out.println("Incorrect username or password. Please try again.");
             return true;
         }
     }
@@ -176,7 +176,17 @@ public class Repl {
             new ChessBoardUI().display();
             return true;
         } catch (ResponseException e) {
-            System.out.println("Failed to join game: " + e.getMessage());
+            if (e.getMessage().contains("400")) {
+                if (input[1].startsWith("-") || !isNumeric(input[1])) {
+                    System.out.println("Please check your game ID.");
+                } else {
+                    System.out.println("Color must be WHITE or BLACK.");
+                }
+            } else if (e.getMessage().contains("403")) {
+                System.out.println("This position is already taken.");
+            } else {
+                System.out.println("Unable to join the game.");
+            }
             return true;
         }
     }
@@ -198,7 +208,7 @@ public class Repl {
             }
             return true;
         } catch (ResponseException e) {
-            System.out.println("Failed to list games: " + e.getMessage());
+            System.out.println("Unable to get games list. Please make sure you're logged in.");
             return true;
         }
     }
@@ -214,7 +224,7 @@ public class Repl {
             System.out.println("Game created with ID: " + game.gameID());
             return true;
         } catch (ResponseException e) {
-            System.out.println("Failed to create game: " + e.getMessage());
+            System.out.println("Unable to create game. Please try a different name.");
             return true;
         }
     }
@@ -223,6 +233,7 @@ public class Repl {
         System.out.println("create <gameName> - Create a new game");
         System.out.println("list - List available games");
         System.out.println("play <gameID> [WHITE|BLACK] - Join a game as a player");
+        System.out.println("observe <gameID> - Watch a game as a observer");
         System.out.println("logout - Log out of your account");
         System.out.println("help - Show this help page");
         System.out.println("quit - Exit the client");
@@ -235,8 +246,12 @@ public class Repl {
             state = ReplState.PRE_LOGIN;
             return true;
         } catch (ResponseException e) {
-            System.out.println("Logout failed: " + e.getMessage());
+            System.out.println("Unable to logout. Please try again.");
             return true;
         }
+    }
+
+    private boolean isNumeric(String str) {
+        return str.matches("\\d+");
     }
 }

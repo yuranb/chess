@@ -21,5 +21,6 @@
     <orderEntry type="library" name="mysql.connector.java" level="project" />
     <orderEntry type="library" name="mysql.connector.java1" level="project" />
     <orderEntry type="library" name="mindrot.jbcrypt" level="project" />
+    <orderEntry type="library" name="glassfish.tyrus.bundles.standalone.client1" level="project" />
   </component>
 </module>
