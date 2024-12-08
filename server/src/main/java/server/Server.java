@@ -1,6 +1,7 @@
 package server;
 
 import dataaccess.*;
+import server.websocket.WebSocketHandler;
 import service.*;
 import spark.*;
 import com.google.gson.Gson;
@@ -11,6 +12,7 @@ public class Server {
     private final UserDAO userDAO;
     private final AuthDAO authDAO;
     private final GameDAO gameDAO;
+    private final WebSocketHandler webSocketHandler;
 
     private final UserService userService;
     private final GameService gameService;
@@ -28,6 +30,7 @@ public class Server {
 
             this.userService = new UserService(userDAO, authDAO);
             this.gameService = new GameService(gameDAO, authDAO);
+            this.webSocketHandler = new WebSocketHandler(gameDAO, authDAO);
 
             this.userHandler = new UserHandler(userService);
             this.gameHandler = new GameHandler(gameService);
@@ -38,7 +41,7 @@ public class Server {
 
     public int run(int desiredPort) {
         Spark.port(desiredPort);
-
+        Spark.webSocket("/ws", webSocketHandler);
         Spark.staticFiles.location("web");
 
         Spark.delete("/db", this::clear);
