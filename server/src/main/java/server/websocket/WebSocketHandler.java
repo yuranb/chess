@@ -212,11 +212,132 @@ public class WebSocketHandler {
     }
 
     private void handleLeave(UserGameCommand command, Session session) {
-        sendError(session, "...");
+        String authToken = command.getAuthToken();
+        Integer gameID = command.getGameID();
+
+        AuthData authData;
+        try {
+            authData = authDAO.getAuth(authToken);
+        } catch (DataAccessException e) {
+            sendError(session, "Error: invalid auth token");
+            return;
+        }
+        if (authData == null) {
+            sendError(session, "Error: invalid auth token");
+            return;
+        }
+
+        String username = authData.username();
+
+        GameData gameData;
+        try {
+            gameData = gameDAO.getGame(gameID);
+        } catch (DataAccessException e) {
+            sendError(session, "Error: could not load game");
+            return;
+        }
+
+        if (gameData == null) {
+            sendError(session, "Error: game not found");
+            return;
+        }
+
+        // Determine which player is leaving and update game state
+        String whiteUser = gameData.whiteUsername();
+        String blackUser = gameData.blackUsername();
+        if (username.equals(whiteUser)) {
+            whiteUser = null;  // remove white player
+        }
+        if (username.equals(blackUser)) {
+            blackUser = null;  // remove black player
+        }
+
+        // Create updated game data with the player removed
+        gameData = new GameData(gameID, whiteUser, blackUser, gameData.gameName(), gameData.game());
+        try {
+            gameDAO.updateGame(gameData);
+        } catch (DataAccessException e) {
+            sendError(session, "Error: could not update game after leave");
+            return;
+        }
+
+        connections.remove(gameID, username);
+
+        NotificationMessage notification = new NotificationMessage(
+                ServerMessage.ServerMessageType.NOTIFICATION,
+                username + " has left the game."
+        );
+        try {
+            connections.broadcast(gameID, username, notification);
+        } catch (IOException e) {
+            System.err.println("Error broadcasting leave notification: " + e.getMessage());
+        }
     }
 
     private void handleResign(UserGameCommand command, Session session) {
-        sendError(session, "...");
+        String authToken = command.getAuthToken();
+        Integer gameID = command.getGameID();
+
+        AuthData authData;
+        try {
+            authData = authDAO.getAuth(authToken);
+        } catch (DataAccessException e) {
+            sendError(session, "Error: invalid auth token");
+            return;
+        }
+        if (authData == null) {
+            sendError(session, "Error: invalid auth token");
+            return;
+        }
+
+        String username = authData.username();
+
+        GameData gameData;
+        try {
+            gameData = gameDAO.getGame(gameID);
+        } catch (DataAccessException e) {
+            sendError(session, "Error: could not load game");
+            return;
+        }
+
+        if (gameData == null) {
+            sendError(session, "Error: game not found");
+            return;
+        }
+
+        // Verify that the user is actually a player in the game
+        boolean isPlayer = username.equals(gameData.whiteUsername()) || username.equals(gameData.blackUsername());
+        if (!isPlayer) {
+            sendError(session, "You can't resign as an observer.");
+            return;
+        }
+
+        // Check if the game is already over
+        if (gameData.game().isGameOver()) {
+            sendError(session, "Game is already over");
+            return;
+        }
+
+        // Game over due to resignation
+        gameData.game().setGameOver();
+
+        try {
+            gameDAO.updateGame(gameData);
+        } catch (DataAccessException e) {
+            sendError(session, "Error: could not update game after resign");
+            return;
+        }
+
+        // Broadcast resignation notification to all players
+        NotificationMessage notificationMessage = new NotificationMessage(
+                ServerMessage.ServerMessageType.NOTIFICATION,
+                username + " resigned."
+        );
+        try {
+            connections.broadcast(gameID, null, notificationMessage);
+        } catch (IOException e) {
+            System.err.println("Error broadcasting resign notification: " + e.getMessage());
+        }
     }
 
     private void sendError(Session session, String errorMessage) {
