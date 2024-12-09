@@ -1,5 +1,6 @@
 package service;
 
+import chess.ChessGame;
 import dataaccess.*;
 import model.*;
 import java.util.List;
@@ -26,7 +27,7 @@ public int createGame(String authToken, String gameName) throws DataAccessExcept
     AuthData authData = validateAuthToken(authToken);
 
     int gameID = gameCounter++;
-    GameData newGame = new GameData(gameID, null, null, gameName, null);
+    GameData newGame = new GameData(gameID, null, null, gameName, new ChessGame());
     gameDAO.createGame(newGame);
 
     return gameID;
