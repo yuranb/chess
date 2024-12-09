@@ -282,6 +282,11 @@ public class Repl {
                 state = ReplState.POST_LOGIN;
                 System.out.println("Left the game");
                 return true;
+            case "redraw":
+                new ChessBoardUI().display();
+                break;
+            case "highlight":
+                return highlightMoves(input);
             case "quit":
                 return false;
             default:
@@ -291,11 +296,14 @@ public class Repl {
     }
 
     private void printInGameHelp() {
-        System.out.println("  move <position> <position> - Make a move (e.g., 'move e2 e4')");
-        System.out.println("  resign - Resign from the current game");
-        System.out.println("  leave - Leave the current game");
-        System.out.println("  help - Show this help message");
-        System.out.println("  quit - Exit the program");
+        System.out.println("Available commands:");
+        System.out.println("  help                    - Show this help message");
+        System.out.println("  move <from> <to>        - Make a move (e.g., 'move e2 e4')");
+        System.out.println("  highlight <position>     - Highlight legal moves for a piece (e.g., 'highlight e2')");
+        System.out.println("  redraw                  - Redraw the chess board");
+        System.out.println("  resign                  - Resign from the current game");
+        System.out.println("  leave                   - Leave the current game");
+        System.out.println("  quit                    - Exit the program");
     }
 
     private boolean makeMove(String[] input) {
@@ -304,6 +312,11 @@ public class Repl {
 
     private boolean resignGame() {
         return false;
+    }
+
+    private boolean highlightMoves(String[] input) {
+        return false;
+
     }
 
     private boolean isNumeric(String str) {
