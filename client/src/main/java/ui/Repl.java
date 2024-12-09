@@ -18,11 +18,15 @@ public class Repl {
     private final ServerFacade server;
     private ReplState state;
     private final Scanner scanner;
+    private String currentGameID;
+    private String currentPlayerColor;
 
     public Repl(ServerFacade server) {
         this.server = server;
         this.state = ReplState.PRE_LOGIN;
         this.scanner = new Scanner(System.in);
+        this.currentGameID = null;
+        this.currentPlayerColor = null;
     }
 
     // Repl loop
@@ -153,6 +157,8 @@ public class Repl {
             server.playGame(gameID, null);  // observer
             System.out.println("Successfully joined game " + gameID + " as observer");
             state = ReplState.IN_GAME;
+            currentGameID = String.valueOf(gameID);  // Initialize currentGameID
+            currentPlayerColor = null; // Initialize currentPlayerColor
             new ChessBoardUI().display();
             return true;
         } catch (NumberFormatException e) {
@@ -184,6 +190,8 @@ public class Repl {
             System.out.println("Successfully joined game " + gameID + " as " + color);
             state = ReplState.IN_GAME;
             System.out.println("Type 'help' to see available commands.");
+            currentGameID = String.valueOf(gameID);  // Initialize currentGameID
+            currentPlayerColor = color; // Initialize currentPlayerColor
             new ChessBoardUI().display();
             return true;
         } catch (ResponseException e) {
@@ -281,6 +289,8 @@ public class Repl {
             case "leave":
                 state = ReplState.POST_LOGIN;
                 System.out.println("Left the game");
+                currentGameID = null;  // Reset currentGameID
+                currentPlayerColor = null; // Reset currentPlayerColor
                 return true;
             case "redraw":
                 new ChessBoardUI().display();
@@ -311,7 +321,18 @@ public class Repl {
     }
 
     private boolean resignGame() {
-        return false;
+        System.out.print("Are you sure you want to resign? (yes/no): ");
+        String answer = scanner.nextLine().trim().toLowerCase();
+        if (answer.equals("yes")) {
+            server.resignGame(Integer.parseInt(currentGameID));
+            System.out.println("You have resigned from the game.");
+            currentGameID = null;
+            currentPlayerColor = null; 
+            state = ReplState.POST_LOGIN;
+        } else {
+            System.out.println("Resignation canceled.");
+        }
+        return true;
     }
 
     private boolean highlightMoves(String[] input) {
