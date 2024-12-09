@@ -228,7 +228,7 @@ public class WebSocketHandler {
 
         // Broadcast notification
         NotificationMessage notif = new NotificationMessage(ServerMessage.ServerMessageType.NOTIFICATION, notificationMsg);
-        connections.broadcast(gameID, null, notif);
+        connections.broadcast(gameID, username, notif);
 
         // Broadcast updated board
         LoadGameMessage loadMsg = new LoadGameMessage(ServerMessage.ServerMessageType.LOAD_GAME, gameData.game());
