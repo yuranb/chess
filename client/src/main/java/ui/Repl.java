@@ -11,7 +11,8 @@ public class Repl {
 
     private enum ReplState {
         PRE_LOGIN,
-        POST_LOGIN
+        POST_LOGIN,
+        IN_GAME
     }
 
     private final ServerFacade server;
@@ -36,6 +37,9 @@ public class Repl {
                     break;
                 case POST_LOGIN:
                     running = handlePostLogin();
+                    break;
+                case IN_GAME:
+                    running = handleInGame();
                     break;
             }
         }
@@ -146,18 +150,23 @@ public class Repl {
 
         try {
             int gameID = Integer.parseInt(input[1]);
+            server.playGame(gameID, null);  // observer
             System.out.println("Successfully joined game " + gameID + " as observer");
+            state = ReplState.IN_GAME;
             new ChessBoardUI().display();
             return true;
         } catch (NumberFormatException e) {
             System.out.println("Invalid game ID format");
+            return true;
+        } catch (ResponseException e) {
+            System.out.println("Failed to observe game: " + e.getMessage());
             return true;
         }
     }
 
     private boolean playGame(String[] input) {
         if (input.length < 2) {
-            System.out.println("Usage: play <gameID> [color]");
+            System.out.println("Usage: play <gameID> [WHITE|BLACK]");
             return true;
         }
 
@@ -173,6 +182,8 @@ public class Repl {
         try {
             server.playGame(gameID, color);
             System.out.println("Successfully joined game " + gameID + " as " + color);
+            state = ReplState.IN_GAME;
+            System.out.println("Type 'help' to see available commands.");
             new ChessBoardUI().display();
             return true;
         } catch (ResponseException e) {
@@ -249,6 +260,50 @@ public class Repl {
             System.out.println("Unable to logout. Please try again.");
             return true;
         }
+    }
+
+    private boolean handleInGame() {
+        System.out.print("[IN-GAME] >>> ");
+        String[] input = scanner.nextLine().split(" ");
+        if (input.length == 0) {
+            return true;
+        }
+
+        String command = input[0].toLowerCase();
+        switch (command) {
+            case "help":
+                printInGameHelp();
+                break;
+            case "move":
+                return makeMove(input);
+            case "resign":
+                return resignGame();
+            case "leave":
+                state = ReplState.POST_LOGIN;
+                System.out.println("Left the game");
+                return true;
+            case "quit":
+                return false;
+            default:
+                System.out.println("Unknown command. Type 'help' to see available commands.");
+        }
+        return true;
+    }
+
+    private void printInGameHelp() {
+        System.out.println("  move <position> <position> - Make a move (e.g., 'move e2 e4')");
+        System.out.println("  resign - Resign from the current game");
+        System.out.println("  leave - Leave the current game");
+        System.out.println("  help - Show this help message");
+        System.out.println("  quit - Exit the program");
+    }
+
+    private boolean makeMove(String[] input) {
+        return false;
+    }
+
+    private boolean resignGame() {
+        return false;
     }
 
     private boolean isNumeric(String str) {
