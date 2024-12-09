@@ -14,6 +14,7 @@ import java.util.Objects;
 public class ChessGame {
     private ChessBoard board;
     private TeamColor turn;
+    private boolean gameOver = false;
 
     public ChessGame() {
         this.turn = TeamColor.WHITE;
@@ -276,5 +277,13 @@ public class ChessGame {
             }
         }
         return true; // there is not a legal movement
+    }
+
+    public boolean isGameOver() {
+        return this.gameOver;
+    }
+
+    public void setGameOver() {
+        this.gameOver = true;
     }
 }

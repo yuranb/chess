@@ -1,12 +1,15 @@
 package server.websocket;
 
+import chess.ChessGame;
+import chess.ChessMove;
+import chess.InvalidMoveException;
 import com.google.gson.Gson;
 import dataaccess.*;
 import model.AuthData;
 import model.GameData;
 import org.eclipse.jetty.websocket.api.Session;
 import org.eclipse.jetty.websocket.api.annotations.*;
-import websocket.commands.UserGameCommand;
+import websocket.commands.*;
 import websocket.messages.ErrorMessage;
 import websocket.messages.LoadGameMessage;
 import websocket.messages.NotificationMessage;
@@ -42,10 +45,19 @@ public class WebSocketHandler {
         try {
             UserGameCommand command = gson.fromJson(message, UserGameCommand.class);
             switch (command.getCommandType()) {
-                case CONNECT -> handleConnect(command, session);
-                case MAKE_MOVE -> handleMakeMove(command, session);
-                case LEAVE -> handleLeave(command, session);
-                case RESIGN -> handleResign(command, session);
+                case CONNECT -> {
+                    handleConnect(command, session);
+                }
+                case MAKE_MOVE -> {
+                    MakeMoveCommand makeMoveCommand = gson.fromJson(message, MakeMoveCommand.class);
+                    handleMakeMove(session, makeMoveCommand);
+                }
+                case LEAVE -> {
+                    handleLeave(command, session);
+                }
+                case RESIGN -> {
+                    handleResign(command, session);
+                }
                 default -> sendError(session, "Invalid command type");
             }
         } catch (Exception e) {
@@ -79,7 +91,7 @@ public class WebSocketHandler {
         String username = authData.username();
         String playerRole = determinePlayerRole(gameData, username);
 
-        connections.add(gameID, session);
+        connections.add(username, gameID, session);
         LoadGameMessage gameMessage = new LoadGameMessage(
             ServerMessage.ServerMessageType.LOAD_GAME,
             gameData.game()
@@ -91,7 +103,7 @@ public class WebSocketHandler {
             ServerMessage.ServerMessageType.NOTIFICATION,
             username + " has joined the game as " + playerRole
         );
-        connections.broadcast(gameID, gson.toJson(notification));
+        connections.broadcast(gameID, null, notification);
     }
 
     private String determinePlayerRole(GameData gameData, String username) {
@@ -104,8 +116,99 @@ public class WebSocketHandler {
         }
     }
 
-    private void handleMakeMove(UserGameCommand command, Session session) {
-        sendError(session, "..");
+    private void handleMakeMove(Session session, MakeMoveCommand command) throws IOException, InvalidMoveException {
+        String authToken = command.getAuthToken();
+        Integer gameID = command.getGameID();
+        ChessMove move = command.getMove();
+
+        // Validate auth token
+        AuthData authData;
+        try {
+            authData = authDAO.getAuth(authToken);
+        } catch (DataAccessException e) {
+            sendError(session, "Error: invalid auth token");
+            return;
+        }
+
+        if (authData == null) {
+            sendError(session, "Error: invalid auth token");
+            return;
+        }
+
+        String username = authData.username();
+
+        // Validate game
+        GameData gameData;
+        try {
+            gameData = gameDAO.getGame(gameID);
+        } catch (DataAccessException e) {
+            sendError(session, "Error: could not load game");
+            return;
+        }
+
+        if (gameData == null) {
+            sendError(session, "Error: game not found");
+            return;
+        }
+
+        // Check if the game is already over
+        if (gameData.game().isGameOver()) {
+            sendError(session, "Game has already ended");
+            return;
+        }
+
+        // Determine current turn
+        ChessGame.TeamColor turn = gameData.game().getTeamTurn();
+        String whiteUser = gameData.whiteUsername();
+        String blackUser = gameData.blackUsername();
+        String currentPlayer = (turn == ChessGame.TeamColor.WHITE) ? whiteUser : blackUser;
+        String opponentPlayer = (turn == ChessGame.TeamColor.WHITE) ? blackUser : whiteUser;
+
+        if (!username.equals(currentPlayer)) {
+            sendError(session, "Error: it is not your turn");
+            return;
+        }
+
+        // Check if the move is legal before calling makeMove()
+        var legalMoves = gameData.game().validMoves(move.getStartPosition());
+        if (legalMoves == null || !legalMoves.contains(move)) {
+            // Move is not legal
+            sendError(session, "Error: invalid move");
+            return;
+        }
+
+        gameData.game().makeMove(move);
+        turn = gameData.game().getTeamTurn();
+
+        String notificationMsg;
+        if (gameData.game().isInCheckmate(turn)) {
+            notificationMsg = opponentPlayer + " is checkmated! " + username + " wins!";
+            gameData.game().setGameOver();
+        } else if (gameData.game().isInStalemate(turn)) {
+            notificationMsg = "Stalemate caused by " + username + "'s move! It's a tie!";
+            gameData.game().setGameOver();
+        } else if (gameData.game().isInCheck(turn)) {
+            notificationMsg = username + " made a move, " + opponentPlayer + " is now in check!";
+        } else {
+            notificationMsg = username + " made a move";
+        }
+
+
+        try {
+            // Update the game in the database
+            gameDAO.updateGame(gameData);
+        } catch (DataAccessException e) {
+            sendError(session, "Error: could not update game");
+            return;
+        }
+
+        // Broadcast notification
+        NotificationMessage notif = new NotificationMessage(ServerMessage.ServerMessageType.NOTIFICATION, notificationMsg);
+        connections.broadcast(gameID, null, notif);
+
+        // Broadcast updated board
+        LoadGameMessage loadMsg = new LoadGameMessage(ServerMessage.ServerMessageType.LOAD_GAME, gameData.game());
+        connections.broadcast(gameID, null, loadMsg);
     }
 
     private void handleLeave(UserGameCommand command, Session session) {
