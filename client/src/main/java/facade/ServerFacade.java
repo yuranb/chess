@@ -1,131 +1,79 @@
 package facade;
 
-import com.google.gson.Gson;
+import chess.ChessMove;
 import exception.ResponseException;
-import model.*;
+import model.AuthData;
+import model.GameData;
+import ui.HttpCommunicator;
+import ui.ServerMessageObserver;
+import ui.WebSocketCommunicator;
+import websocket.commands.MakeMoveCommand;
+import websocket.commands.UserGameCommand;
 
-import java.io.*;
-import java.net.*;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 public class ServerFacade {
+    private final HttpCommunicator httpCommunicator;
+    private WebSocketCommunicator wsCommunicator;
+    private String authToken;
 
-    private final String serverUrl;
-    private String authToken = null;
-
-    public ServerFacade(String url) {
-        serverUrl = url;
+    public ServerFacade(String baseUrl) {
+        this.httpCommunicator = new HttpCommunicator(baseUrl);
     }
 
-    //Register a new user
-    public AuthData register(String username, String password, String email) throws ResponseException {
-        var path = "/user";
-        UserData userData = new UserData(username, password, email);
-        AuthData authData = this.makeRequest("POST", path, userData, AuthData.class);
-        this.authToken = authData.authToken();
-        return authData;
+    public void register(String username, String password, String email) throws ResponseException {
+        AuthData auth = httpCommunicator.register(username, password, email);
+        this.authToken = auth.authToken();
+        httpCommunicator.setAuthToken(this.authToken);
     }
 
-    //Login
-    public AuthData login(String username, String password) throws ResponseException {
-        var path = "/session";
-        UserData userData = new UserData(username, password, null);
-        AuthData authData = this.makeRequest("POST", path, userData, AuthData.class);
-        this.authToken = authData.authToken();
-        return authData;
+    public void login(String username, String password) throws ResponseException {
+        AuthData auth = httpCommunicator.login(username, password);
+        this.authToken = auth.authToken();
+        httpCommunicator.setAuthToken(this.authToken);
     }
 
-    //Logout
     public void logout() throws ResponseException {
-        var path = "/session";
-        this.makeRequest("DELETE", path, null, null);
+        httpCommunicator.logout();
         this.authToken = null;
+        httpCommunicator.setAuthToken(null);
     }
 
-    //CreateGame
     public GameData createGame(String gameName) throws ResponseException {
-        var path = "/game";
-        var request = new HashMap<String, String>();
-        request.put("gameName", gameName);
-        return this.makeRequest("POST", path, request, GameData.class);
+        return httpCommunicator.createGame(gameName);
     }
 
-    //ListGames
     public List<GameData> listGames() throws ResponseException {
-        var path = "/game";
-        GameList gamesList = this.makeRequest("GET", path, null, GameList.class);
-        return gamesList.getGames();
+        return httpCommunicator.listGames();
     }
 
-    //Join Game
-    public GameData playGame(int gameID, String playerColor) throws ResponseException {
-        var path = "/game";
-        Map<String, Object> request = new HashMap<>();
-        request.put("gameID",gameID);
-        request.put("playerColor", playerColor);
-
-        this.makeRequest("PUT", path, request, null);
-        return null;
+    public void playGame(int gameID, String playerColor) throws ResponseException {
+        httpCommunicator.playGame(gameID, playerColor);
     }
 
-    public void clear() throws Exception {
-        this.makeRequest("DELETE", "/db", null, null);
+    public void connectWebSocket(String baseUrl, ServerMessageObserver observer) {
+        wsCommunicator = new WebSocketCommunicator(baseUrl, observer);
     }
 
-    public <T> T makeRequest(String method, String path, Object request, Class<T> responseClass) throws ResponseException {
-        try {
-            URL url = (new URI(serverUrl + path)).toURL();
-            HttpURLConnection http = (HttpURLConnection) url.openConnection();
-            http.setRequestMethod(method);
-            http.setDoOutput(true);
-
-            if (this.authToken != null) {
-                http.setRequestProperty("Authorization", this.authToken);
-            }
-
-            writeBody(request, http);
-            http.connect();
-            throwIfNotSuccessful(http);
-            return readBody(http, responseClass);
-        } catch (Exception ex) {
-            throw new ResponseException(500, ex.getMessage());
+    public void sendCommand(UserGameCommand command) {
+        if (wsCommunicator == null) {
+            throw new IllegalStateException("WebSocket not connected");
         }
+        wsCommunicator.sendCommand(command);
     }
 
-
-    private static void writeBody(Object request, HttpURLConnection http) throws IOException {
-        if (request != null) {
-            http.addRequestProperty("Content-Type", "application/json");
-            String reqData = new Gson().toJson(request);
-            try (OutputStream reqBody = http.getOutputStream()) {
-                reqBody.write(reqData.getBytes());
-            }
-        }
+    public void makeMove(int gameID, ChessMove move) {
+        MakeMoveCommand moveCommand = new MakeMoveCommand(authToken, gameID, move);
+        sendCommand(moveCommand);
     }
 
-    private void throwIfNotSuccessful(HttpURLConnection http) throws IOException, ResponseException {
-        var status = http.getResponseCode();
-        if (!isSuccessful(status)) {
-            throw new ResponseException(status, "failure: " + status);
-        }
+    public void leaveGame(int gameID) {
+        UserGameCommand leave = new UserGameCommand(UserGameCommand.CommandType.LEAVE, authToken, gameID);
+        sendCommand(leave);
     }
 
-    private static <T> T readBody(HttpURLConnection http, Class<T> responseClass) throws IOException {
-        T response = null;
-        if (http.getContentLength() < 0) {
-            try (InputStream respBody = http.getInputStream()) {
-                InputStreamReader reader = new InputStreamReader(respBody);
-                if (responseClass != null) {
-                    response = new Gson().fromJson(reader, responseClass);
-                }
-            }
-        }
-        return response;
-    }
-
-    private boolean isSuccessful(int status) {
-        return status / 100 == 2;
+    public void resignGame(int gameID) {
+        UserGameCommand resign = new UserGameCommand(UserGameCommand.CommandType.RESIGN, authToken, gameID);
+        sendCommand(resign);
     }
 }

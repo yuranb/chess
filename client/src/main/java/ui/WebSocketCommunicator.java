@@ -20,8 +20,9 @@ public class WebSocketCommunicator extends Endpoint {
     public WebSocketCommunicator(String baseUrl, ServerMessageObserver observer) {
         this.observer = observer;
         try {
+            String wsUrl = baseUrl.replace("http", "ws") + "/ws";
             WebSocketContainer container = ContainerProvider.getWebSocketContainer();
-            container.connectToServer(this, new URI(baseUrl.replace("http", "ws") + "/ws"));
+            container.connectToServer(this, new URI(wsUrl));
         } catch (Exception ex) {
             throw new RuntimeException("Failed to connect to WebSocket", ex);
         }
@@ -31,6 +32,7 @@ public class WebSocketCommunicator extends Endpoint {
     public void onOpen(Session session, EndpointConfig endpointConfig) {
         this.session = session;
         session.addMessageHandler(String.class, this::handleMessage);
+        System.out.println("WebSocket connected successfully.");
     }
 
     private void handleMessage(String message) {
