@@ -54,7 +54,7 @@ public class WebSocketCommunicator extends Endpoint {
         }
     }
 
-    public void sendMessage(String json) {
+    /*public void sendMessage(String json) {
         if (session != null && session.isOpen()) {
             try {
                 session.getBasicRemote().sendText(json);
@@ -64,7 +64,7 @@ public class WebSocketCommunicator extends Endpoint {
         } else {
             throw new IllegalStateException("Session not connected");
         }
-    }
+    }*/
 
     public void sendCommand(UserGameCommand command) {
         if (session != null && session.isOpen()) {

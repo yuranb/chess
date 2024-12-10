@@ -67,10 +67,10 @@ public class ServerFacade {
         sendCommand(moveCommand);
     }
 
-    public void leaveGame(int gameID) {
+    /*public void leaveGame(int gameID) {
         UserGameCommand leave = new UserGameCommand(UserGameCommand.CommandType.LEAVE, authToken, gameID);
         sendCommand(leave);
-    }
+    }*/
 
     public void resignGame(int gameID) {
         UserGameCommand resign = new UserGameCommand(UserGameCommand.CommandType.RESIGN, authToken, gameID);
