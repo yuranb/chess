@@ -7,12 +7,13 @@ public class Main {
         var piece = new ChessPiece(ChessGame.TeamColor.WHITE, ChessPiece.PieceType.PAWN);
         System.out.println("♕ Welcome to 240 Chess Client: " + piece);
 
-        var serverUrl = "http://localhost:8080";
+        var baseUrl = "http://localhost:8080";
         if (args.length == 1) {
-            serverUrl = args[0];
+            baseUrl = args[0];
         }
 
-        ServerFacade server = new ServerFacade(serverUrl);
-        new Repl(server).run();
+        ServerFacade server = new ServerFacade(baseUrl);
+        Repl repl = new Repl(server, baseUrl);
+        repl.run();
     }
 }

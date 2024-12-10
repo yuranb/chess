@@ -1,13 +1,39 @@
 package ui;
 
+import chess.ChessMove;
+import chess.ChessPosition;
 import facade.ServerFacade;
 import exception.ResponseException;
 import model.GameData;
+import websocket.messages.ErrorMessage;
+import websocket.messages.LoadGameMessage;
+import websocket.messages.NotificationMessage;
+import websocket.messages.ServerMessage;
 
 import java.util.List;
 import java.util.Scanner;
 
-public class Repl {
+public class Repl implements ServerMessageObserver {
+
+    @Override
+    public void notify(ServerMessage message) {
+        switch (message.getServerMessageType()) {
+            case NOTIFICATION:
+                NotificationMessage notif = (NotificationMessage) message;
+                System.out.println("Notice : " + notif.getContent());
+                break;
+            case ERROR:
+                ErrorMessage err = (ErrorMessage) message;
+                System.out.println("Error : " + err.getErrorMessage());
+                break;
+            case LOAD_GAME:
+                LoadGameMessage load = (LoadGameMessage) message;
+                System.out.println("Load : " + load.getGame());
+                break;
+            default:
+                System.out.println("Unknown massage type");
+        }
+    }
 
     private enum ReplState {
         PRE_LOGIN,
@@ -16,13 +42,15 @@ public class Repl {
     }
 
     private final ServerFacade server;
+    private final String baseUrl;
     private ReplState state;
     private final Scanner scanner;
     private String currentGameID;
     private String currentPlayerColor;
 
-    public Repl(ServerFacade server) {
+    public Repl(ServerFacade server, String baseUrl) {
         this.server = server;
+        this.baseUrl = baseUrl;
         this.state = ReplState.PRE_LOGIN;
         this.scanner = new Scanner(System.in);
         this.currentGameID = null;
@@ -82,6 +110,7 @@ public class Repl {
         }
         try {
             server.register(input[1], input[2], input[3]);
+            server.connectWebSocket(baseUrl, this);
             System.out.println("Registration successful. You are now logged in.");
             state = ReplState.POST_LOGIN; // Move to Post login state
             return true;
@@ -99,6 +128,7 @@ public class Repl {
         try {
             server.login(input[1], input[2]);
             System.out.println("Login successful. You are now logged in.");
+            server.connectWebSocket(baseUrl, this);
             state = ReplState.POST_LOGIN;
             return true;
         } catch (ResponseException e) {
@@ -308,7 +338,7 @@ public class Repl {
     private void printInGameHelp() {
         System.out.println("Available commands:");
         System.out.println("  help                    - Show this help message");
-        System.out.println("  move <from> <to>        - Make a move (e.g., 'move e2 e4')");
+        System.out.println("  move <from> <to>        - Make a move");
         System.out.println("  highlight <position>     - Highlight legal moves for a piece (e.g., 'highlight e2')");
         System.out.println("  redraw                  - Redraw the chess board");
         System.out.println("  resign                  - Resign from the current game");
@@ -317,7 +347,45 @@ public class Repl {
     }
 
     private boolean makeMove(String[] input) {
-        return false;
+        if (input.length < 3) {
+            System.out.println("Usage: move <from> <to>");
+            return true;
+        }
+
+        String fromStr = input[1].toLowerCase();
+        String toStr = input[2].toLowerCase();
+
+        try {
+            ChessPosition fromPos = parseChessPosition(fromStr);
+            ChessPosition toPos = parseChessPosition(toStr);
+            ChessMove move = new ChessMove(fromPos, toPos, null);
+
+            server.makeMove(Integer.parseInt(currentGameID), move);
+            System.out.println("Move sent: " + fromStr + " -> " + toStr);
+
+
+        } catch (Exception e) {
+            System.out.println("Invalid move or failed to send move: " + e.getMessage());
+        }
+
+        return true;
+    }
+
+    private ChessPosition parseChessPosition(String algebraic) {
+        if (algebraic.length() != 2) {
+            throw new IllegalArgumentException("Position must be in format like 'e2'");
+        }
+
+        char fileChar = algebraic.charAt(0); // e.g. 'e'
+        char rankChar = algebraic.charAt(1); // e.g. '2'
+
+        if (fileChar < 'a' || fileChar > 'h' || rankChar < '1' || rankChar > '8') {
+            throw new IllegalArgumentException("Invalid chess position: " + algebraic);
+        }
+
+        int col = fileChar - 'a' + 1; // 'a'->1
+        int row = rankChar - '1' + 1; // '1'->1
+        return new ChessPosition(row, col);
     }
 
     private boolean resignGame() {
@@ -337,7 +405,6 @@ public class Repl {
 
     private boolean highlightMoves(String[] input) {
         return false;
-
     }
 
     private boolean isNumeric(String str) {
