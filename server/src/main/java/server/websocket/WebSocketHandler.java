@@ -116,7 +116,9 @@ public class WebSocketHandler {
         Integer gameID = command.getGameID();
 
         Optional<UserGameContext> contextOpt = validateSession(authToken, gameID, session);
-        if (contextOpt.isEmpty()) return;
+        if (contextOpt.isEmpty()){
+            return;
+        }
 
         UserGameContext context = contextOpt.get();
         AuthData authData = context.getAuthData();
@@ -157,7 +159,9 @@ public class WebSocketHandler {
         ChessMove move = command.getMove();
 
         Optional<UserGameContext> contextOpt = validateSession(authToken, gameID, session);
-        if (contextOpt.isEmpty()) return;
+        if (contextOpt.isEmpty()){
+            return;
+        }
 
         UserGameContext context = contextOpt.get();
         AuthData authData = context.getAuthData();
@@ -237,7 +241,9 @@ public class WebSocketHandler {
         Integer gameID = command.getGameID();
 
         Optional<UserGameContext> contextOpt = validateSession(authToken, gameID, session);
-        if (contextOpt.isEmpty()) return;
+        if (contextOpt.isEmpty()){
+            return;
+        }
 
         UserGameContext context = contextOpt.get();
         AuthData authData = context.getAuthData();
@@ -292,7 +298,9 @@ public class WebSocketHandler {
         Integer gameID = command.getGameID();
 
         Optional<UserGameContext> contextOpt = validateSession(authToken, gameID, session);
-        if (contextOpt.isEmpty()) return;
+        if (contextOpt.isEmpty()) {
+            return;
+        }
 
         UserGameContext context = contextOpt.get();
         AuthData authData = context.getAuthData();
