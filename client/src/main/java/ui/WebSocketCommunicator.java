@@ -54,17 +54,6 @@ public class WebSocketCommunicator extends Endpoint {
         }
     }
 
-    /*public void sendMessage(String json) {
-        if (session != null && session.isOpen()) {
-            try {
-                session.getBasicRemote().sendText(json);
-            } catch (IOException ex) {
-                throw new RuntimeException("Failed to send message", ex);
-            }
-        } else {
-            throw new IllegalStateException("Session not connected");
-        }
-    }*/
 
     public void sendCommand(UserGameCommand command) {
         if (session != null && session.isOpen()) {
