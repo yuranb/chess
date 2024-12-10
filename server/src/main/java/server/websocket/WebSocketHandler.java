@@ -16,6 +16,7 @@ import websocket.messages.NotificationMessage;
 import websocket.messages.ServerMessage;
 
 import java.io.IOException;
+import java.util.Optional;
 
 @WebSocket
 public class WebSocketHandler {
@@ -76,47 +77,65 @@ public class WebSocketHandler {
         }
     }
 
+
+    private Optional<UserGameContext> validateSession(String authToken, Integer gameID, Session session) {
+        try {
+            // Validate auth token
+            AuthData authData = authDAO.getAuth(authToken);
+            if (authData == null) {
+                System.out.println("Invalid auth token");
+                sendError(session, "Error: invalid auth token");
+                return Optional.empty();
+            }
+
+            // Validate game ID
+            if (gameID == null || gameID < 0) {
+                System.out.println("Invalid game ID");
+                sendError(session, "Error: invalid game ID");
+                return Optional.empty();
+            }
+
+            GameData gameData = gameDAO.getGame(gameID);
+            if (gameData == null) {
+                System.out.println("Game not found");
+                sendError(session, "Error: game not found");
+                return Optional.empty();
+            }
+
+            return Optional.of(new UserGameContext(authData, gameData));
+        } catch (DataAccessException e) {
+            System.out.println("Data access error: " + e.getMessage());
+            sendError(session, "Error accessing data");
+            return Optional.empty();
+        }
+    }
+
     private void handleConnect(UserGameCommand command, Session session) throws Exception {
         System.out.println("Executing handleConnect");
         String authToken = command.getAuthToken();
         Integer gameID = command.getGameID();
 
-        // Validate auth token
-        AuthData authData = authDAO.getAuth(authToken);
-        if (authData == null) {
-            System.out.println("Invalid auth token");
-            sendError(session, "Error: invalid auth token");
-            return;
-        }
+        Optional<UserGameContext> contextOpt = validateSession(authToken, gameID, session);
+        if (contextOpt.isEmpty()) return;
 
-        // Validate game ID
-        if (gameID == null || gameID < 0) {
-            System.out.println("Invalid game ID");
-            sendError(session, "Error: invalid game ID");
-            return;
-        }
-
-        GameData gameData = gameDAO.getGame(gameID);
-        if (gameData == null) {
-            System.out.println("Game not found");
-            sendError(session, "Error: game not found");
-            return;
-        }
+        UserGameContext context = contextOpt.get();
+        AuthData authData = context.getAuthData();
+        GameData gameData = context.getGameData();
 
         String username = authData.username();
         String playerRole = determinePlayerRole(gameData, username);
 
         connections.add(username, gameID, session);
         LoadGameMessage gameMessage = new LoadGameMessage(
-            ServerMessage.ServerMessageType.LOAD_GAME,
-            gameData.game()
+                ServerMessage.ServerMessageType.LOAD_GAME,
+                gameData.game()
         );
         session.getRemote().sendString(gson.toJson(gameMessage));
 
         // Notify other players
         NotificationMessage notification = new NotificationMessage(
-            ServerMessage.ServerMessageType.NOTIFICATION,
-            username + " has joined the game as " + playerRole
+                ServerMessage.ServerMessageType.NOTIFICATION,
+                username + " has joined the game as " + playerRole
         );
         connections.broadcast(gameID, username, notification);
     }
@@ -137,39 +156,14 @@ public class WebSocketHandler {
         Integer gameID = command.getGameID();
         ChessMove move = command.getMove();
 
-        // Validate auth token
-        AuthData authData;
-        try {
-            authData = authDAO.getAuth(authToken);
-        } catch (DataAccessException e) {
-            System.out.println("Invalid auth token");
-            sendError(session, "Error: invalid auth token");
-            return;
-        }
+        Optional<UserGameContext> contextOpt = validateSession(authToken, gameID, session);
+        if (contextOpt.isEmpty()) return;
 
-        if (authData == null) {
-            System.out.println("Invalid auth token");
-            sendError(session, "Error: invalid auth token");
-            return;
-        }
+        UserGameContext context = contextOpt.get();
+        AuthData authData = context.getAuthData();
+        GameData gameData = context.getGameData();
 
         String username = authData.username();
-
-        // Validate game
-        GameData gameData;
-        try {
-            gameData = gameDAO.getGame(gameID);
-        } catch (DataAccessException e) {
-            System.out.println("Could not load game");
-            sendError(session, "Error: could not load game");
-            return;
-        }
-
-        if (gameData == null) {
-            System.out.println("Game not found");
-            sendError(session, "Error: game not found");
-            return;
-        }
 
         // Check if the game is already over
         if (gameData.game().isGameOver()) {
@@ -242,55 +236,39 @@ public class WebSocketHandler {
         String authToken = command.getAuthToken();
         Integer gameID = command.getGameID();
 
-        AuthData authData;
-        try {
-            authData = authDAO.getAuth(authToken);
-        } catch (DataAccessException e) {
-            System.out.println("Invalid auth token");
-            sendError(session, "Error: invalid auth token");
-            return;
-        }
-        if (authData == null) {
-            System.out.println("Invalid auth token");
-            sendError(session, "Error: invalid auth token");
-            return;
-        }
+        Optional<UserGameContext> contextOpt = validateSession(authToken, gameID, session);
+        if (contextOpt.isEmpty()) return;
+
+        UserGameContext context = contextOpt.get();
+        AuthData authData = context.getAuthData();
+        GameData gameData = context.getGameData();
 
         String username = authData.username();
-
-        GameData gameData;
-        try {
-            gameData = gameDAO.getGame(gameID);
-        } catch (DataAccessException e) {
-            System.out.println("Could not load game");
-            sendError(session, "Error: could not load game");
-            return;
-        }
-
-        if (gameData == null) {
-            System.out.println("Game not found");
-            sendError(session, "Error: game not found");
-            return;
-        }
 
         // Determine which player is leaving and update game state
         String whiteUser = gameData.whiteUsername();
         String blackUser = gameData.blackUsername();
+        boolean wasPlayer = false;
+
         if (username.equals(whiteUser)) {
-            whiteUser = null;  // remove white player
+            whiteUser = null;  // Remove white player
+            wasPlayer = true;
         }
         if (username.equals(blackUser)) {
-            blackUser = null;  // remove black player
+            blackUser = null;  // Remove black player
+            wasPlayer = true;
         }
 
-        // Create updated game data with the player removed
-        gameData = new GameData(gameID, whiteUser, blackUser, gameData.gameName(), gameData.game());
-        try {
-            gameDAO.updateGame(gameData);
-        } catch (DataAccessException e) {
-            System.out.println("Could not update game after leave");
-            sendError(session, "Error: could not update game after leave");
-            return;
+        if (wasPlayer) {
+            // Create updated game data with the player removed
+            gameData = new GameData(gameID, whiteUser, blackUser, gameData.gameName(), gameData.game());
+            try {
+                gameDAO.updateGame(gameData);
+            } catch (DataAccessException e) {
+                System.out.println("Could not update game after leave");
+                sendError(session, "Error: could not update game after leave");
+                return;
+            }
         }
 
         connections.remove(gameID, username);
@@ -313,36 +291,14 @@ public class WebSocketHandler {
         String authToken = command.getAuthToken();
         Integer gameID = command.getGameID();
 
-        AuthData authData;
-        try {
-            authData = authDAO.getAuth(authToken);
-        } catch (DataAccessException e) {
-            System.out.println("Invalid auth token");
-            sendError(session, "Error: invalid auth token");
-            return;
-        }
-        if (authData == null) {
-            System.out.println("Invalid auth token");
-            sendError(session, "Error: invalid auth token");
-            return;
-        }
+        Optional<UserGameContext> contextOpt = validateSession(authToken, gameID, session);
+        if (contextOpt.isEmpty()) return;
+
+        UserGameContext context = contextOpt.get();
+        AuthData authData = context.getAuthData();
+        GameData gameData = context.getGameData();
 
         String username = authData.username();
-
-        GameData gameData;
-        try {
-            gameData = gameDAO.getGame(gameID);
-        } catch (DataAccessException e) {
-            System.out.println("Could not load game");
-            sendError(session, "Error: could not load game");
-            return;
-        }
-
-        if (gameData == null) {
-            System.out.println("Game not found");
-            sendError(session, "Error: game not found");
-            return;
-        }
 
         // Verify that the user is actually a player in the game
         boolean isPlayer = username.equals(gameData.whiteUsername()) || username.equals(gameData.blackUsername());
@@ -390,6 +346,25 @@ public class WebSocketHandler {
             session.getRemote().sendString(gson.toJson(error));
         } catch (Exception e) {
             System.err.println("Error sending message: " + e.getMessage());
+        }
+    }
+
+
+    private static class UserGameContext {
+        private final AuthData authData;
+        private final GameData gameData;
+
+        public UserGameContext(AuthData authData, GameData gameData) {
+            this.authData = authData;
+            this.gameData = gameData;
+        }
+
+        public AuthData getAuthData() {
+            return authData;
+        }
+
+        public GameData getGameData() {
+            return gameData;
         }
     }
 }
