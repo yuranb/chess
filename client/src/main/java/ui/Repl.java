@@ -1,5 +1,6 @@
 package ui;
 
+import chess.ChessGame;
 import chess.ChessMove;
 import chess.ChessPosition;
 import facade.ServerFacade;
@@ -10,30 +11,13 @@ import websocket.messages.LoadGameMessage;
 import websocket.messages.NotificationMessage;
 import websocket.messages.ServerMessage;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Scanner;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 public class Repl implements ServerMessageObserver {
-
-    @Override
-    public void notify(ServerMessage message) {
-        switch (message.getServerMessageType()) {
-            case NOTIFICATION:
-                NotificationMessage notif = (NotificationMessage) message;
-                System.out.println("Notice : " + notif.getContent());
-                break;
-            case ERROR:
-                ErrorMessage err = (ErrorMessage) message;
-                System.out.println("Error : " + err.getErrorMessage());
-                break;
-            case LOAD_GAME:
-                LoadGameMessage load = (LoadGameMessage) message;
-                System.out.println("Load : " + load.getGame());
-                break;
-            default:
-                System.out.println("Unknown massage type");
-        }
-    }
 
     private enum ReplState {
         PRE_LOGIN,
@@ -47,6 +31,7 @@ public class Repl implements ServerMessageObserver {
     private final Scanner scanner;
     private String currentGameID;
     private String currentPlayerColor;
+    private ChessGame game;
 
     public Repl(ServerFacade server, String baseUrl) {
         this.server = server;
@@ -55,6 +40,7 @@ public class Repl implements ServerMessageObserver {
         this.scanner = new Scanner(System.in);
         this.currentGameID = null;
         this.currentPlayerColor = null;
+        this.game = new ChessGame();
     }
 
     // Repl loop
@@ -76,6 +62,33 @@ public class Repl implements ServerMessageObserver {
             }
         }
         System.out.println("Goodbye!");
+    }
+
+    @Override
+    public void notify(ServerMessage message) {
+        switch (message.getServerMessageType()) {
+            case NOTIFICATION:
+                NotificationMessage notif = (NotificationMessage) message;
+                System.out.println("Notice : " + notif.getContent());
+                break;
+            case ERROR:
+                ErrorMessage err = (ErrorMessage) message;
+                System.out.println("Error : " + err.getErrorMessage());
+                break;
+            case LOAD_GAME:
+                LoadGameMessage load = (LoadGameMessage) message;
+                this.game = load.getGame();
+
+                if (currentPlayerColor == null) {
+                    new ChessBoardUI().display(game, false);
+                    new ChessBoardUI().display(game, true);
+                } else {
+                    redrawBoard();
+                }
+                break;
+            default:
+                System.out.println("Unknown massage type");
+        }
     }
 
     private boolean handlePreLogin() {
@@ -184,12 +197,13 @@ public class Repl implements ServerMessageObserver {
 
         try {
             int gameID = Integer.parseInt(input[1]);
-            server.playGame(gameID, null);  // observer
-            System.out.println("Successfully joined game " + gameID + " as observer");
+            String response = server.observeGame(gameID);// observer
+            System.out.println(response);
+
             state = ReplState.IN_GAME;
             currentGameID = String.valueOf(gameID);  // Initialize currentGameID
             currentPlayerColor = null; // Initialize currentPlayerColor
-            new ChessBoardUI().display();
+
             return true;
         } catch (NumberFormatException e) {
             System.out.println("Invalid game ID format");
@@ -214,16 +228,19 @@ public class Repl implements ServerMessageObserver {
             return true;
         }
 
-        String color = input[2];
+        String color  = input.length >= 3 ? input[2].toUpperCase() : "WHITE";
         try {
             server.playGame(gameID, color);
             System.out.println("Successfully joined game " + gameID + " as " + color);
+
+            server.connectAsPlayer(gameID, color);
+
             state = ReplState.IN_GAME;
             System.out.println("Type 'help' to see available commands.");
             currentGameID = String.valueOf(gameID);  // Initialize currentGameID
             currentPlayerColor = color; // Initialize currentPlayerColor
-            new ChessBoardUI().display();
             return true;
+
         } catch (ResponseException e) {
             if (e.getMessage().contains("400")) {
                 if (input[1].startsWith("-") || !isNumeric(input[1])) {
@@ -313,24 +330,52 @@ public class Repl implements ServerMessageObserver {
                 printInGameHelp();
                 break;
             case "move":
+                if (currentPlayerColor == null) {
+                    System.out.println("Observers cannot make moves.");
+                    break;
+                }
                 return makeMove(input);
             case "resign":
+                if (currentPlayerColor == null) {
+                    System.out.println("Observers cannot resign.");
+                    break;
+                }
                 return resignGame();
             case "leave":
-                state = ReplState.POST_LOGIN;
-                System.out.println("Left the game");
-                currentGameID = null;  // Reset currentGameID
-                currentPlayerColor = null; // Reset currentPlayerColor
-                return true;
+                return leaveGame();
             case "redraw":
-                new ChessBoardUI().display();
+                redrawBoard();
                 break;
             case "highlight":
+                if (currentPlayerColor == null) {
+                    System.out.println("Observers cannot highlight moves.");
+                    break;
+                }
                 return highlightMoves(input);
             case "quit":
                 return false;
             default:
                 System.out.println("Unknown command. Type 'help' to see available commands.");
+        }
+        return true;
+    }
+
+    private boolean leaveGame() {
+        if (currentGameID == null) {
+            System.out.println("You are not currently in a game.");
+            return true;
+        }
+
+        try {
+            server.leaveGame( Integer.parseInt(currentGameID));
+            System.out.println("Left the game successfully.");
+            // Reset game state
+            currentGameID = null;
+            currentPlayerColor = null;
+            game = new ChessGame();
+            state = ReplState.POST_LOGIN;
+        } catch (Exception e) {
+            System.out.println("Failed to leave the game: " + e.getMessage());
         }
         return true;
     }
@@ -360,9 +405,20 @@ public class Repl implements ServerMessageObserver {
             ChessPosition toPos = parseChessPosition(toStr);
             ChessMove move = new ChessMove(fromPos, toPos, null);
 
-            server.makeMove(Integer.parseInt(currentGameID), move);
-            System.out.println("Move sent: " + fromStr + " -> " + toStr);
+            var legalMoves = game.validMoves(fromPos);
+            if (legalMoves == null || !legalMoves.contains(move)) {
+                System.out.println("Invalid move");
+                return true;
+            } else{
 
+                server.makeMove(Integer.parseInt(currentGameID), move);
+                game.makeMove(move);
+                System.out.println(String.format(
+                        "Player %s moved from %s to %s. (Next: %s's turn.)",
+                        currentPlayerColor, fromStr, toStr,
+                        game.isGameOver() ? "Game Over" : game.getTeamTurn()
+                ));
+            }
 
         } catch (Exception e) {
             System.out.println("Invalid move or failed to send move: " + e.getMessage());
@@ -395,7 +451,7 @@ public class Repl implements ServerMessageObserver {
             server.resignGame(Integer.parseInt(currentGameID));
             System.out.println("You have resigned from the game.");
             currentGameID = null;
-            currentPlayerColor = null; 
+            currentPlayerColor = null;
             state = ReplState.POST_LOGIN;
         } else {
             System.out.println("Resignation canceled.");
@@ -404,7 +460,56 @@ public class Repl implements ServerMessageObserver {
     }
 
     private boolean highlightMoves(String[] input) {
-        return false;
+        if (input.length != 2) {
+            System.out.println("Usage: highlight <position>");
+            return true;
+        }
+
+        String posStr = input[1].toLowerCase();
+        try {
+
+            ChessPosition position = parseChessPosition(posStr);
+
+            if (game == null) {
+                System.out.println("No game data available. Please join or observe a game first.");
+                return true;
+            }
+
+            boolean isBlackView = "BLACK".equalsIgnoreCase(currentPlayerColor);
+
+            Collection<ChessMove> validMoves = game.validMoves(position);
+            if (validMoves.isEmpty()) {
+                System.out.println("No valid moves found for the piece at " + posStr);
+                return true;
+            }
+
+            Set<ChessPosition> highlightedPositions = validMoves.stream()
+                    .map(ChessMove::getEndPosition)
+                    .collect(Collectors.toSet());
+            highlightedPositions.add(position);
+
+            ChessBoardUI ui = new ChessBoardUI();
+            ui.printBoardWithHighlights(game, position, isBlackView, highlightedPositions);
+
+            return true;
+        } catch (IllegalArgumentException e) {
+            System.out.println("Invalid position format. Use format like 'e2'.");
+        } catch (Exception e) {
+            System.out.println("Failed to highlight moves: " + e.getMessage());
+        }
+
+        return true;
+    }
+
+    private void redrawBoard() {
+        if (currentPlayerColor == null) {
+            new ChessBoardUI().display(game, false);
+            new ChessBoardUI().display(game, true);
+        } else {
+            boolean isBlackView = "BLACK".equalsIgnoreCase(currentPlayerColor);
+            ChessBoardUI ui = new ChessBoardUI();
+            ui.display(game, isBlackView);
+        }
     }
 
     private boolean isNumeric(String str) {

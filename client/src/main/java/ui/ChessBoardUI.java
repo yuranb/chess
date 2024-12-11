@@ -1,44 +1,59 @@
 package ui;
 
 import chess.*;
+
+import java.util.Set;
+
 import static ui.EscapeSequences.*;
 
 public class ChessBoardUI {
-    private final ChessGame game;
-    private final ChessBoard board;
-
     public ChessBoardUI() {
-        this.game = new ChessGame();
-        this.board = new ChessBoard();
-        board.resetBoard();
-        game.setBoard(board);
     }
 
-    public void display() {
+    public void printBoardWithHighlights(ChessGame game, ChessPosition startPosition, boolean isBlackView, Set<ChessPosition> highlightedPositions) {
         System.out.print(ERASE_SCREEN);
+        ChessBoard board = game.getBoard();
 
-        // Show white's view
-        System.out.println(SET_TEXT_BOLD + "White's Perspective:");
-        showBoardView(false);
 
-        System.out.println("\n");
+        if (startPosition != null) {
+            highlightedPositions.add(startPosition);
+        }
 
-        // Show black's view
-        System.out.println(SET_TEXT_BOLD + "Black's Perspective:");
-        showBoardView(true);
+        System.out.println(SET_TEXT_BOLD + (isBlackView ? "Black's Perspective:" : "White's Perspective:"));
+        showBoardView(board, isBlackView, highlightedPositions);
 
         System.out.print(RESET_TEXT_BOLD_FAINT);
     }
 
-    private void showBoardView(boolean isBlackView) {
-        drawColumnLabels(isBlackView);
+    public void display(ChessGame game, boolean isBlackView) {
+        System.out.print(ERASE_SCREEN);
 
-        for (int row = 8; row >= 1; row--) {
-            int actualRow = row;
-            if (isBlackView) {
-                actualRow = 9 - row;
+        if (isBlackView) {
+            System.out.println(SET_TEXT_BOLD + "Black's Perspective:");
+        } else {
+            System.out.println(SET_TEXT_BOLD + "White's Perspective:");
+        }
+
+        ChessBoard board = game.getBoard();
+
+        showBoardView(board, isBlackView, Set.of());
+        System.out.print(RESET_TEXT_BOLD_FAINT);
+    }
+
+    private void showBoardView( ChessBoard board, boolean isBlackView, Set<ChessPosition> highlightedPositions) {
+        drawColumnLabels(isBlackView);
+        if (isBlackView) {
+            // 黑棋视角：行号从1到8，从上到下
+            for (int row = 1; row <= 8; row++) {
+                int actualRow = row;
+                drawBoardRow(board, actualRow, isBlackView, highlightedPositions);
             }
-            drawBoardRow(actualRow, isBlackView);
+        } else {
+            // 白棋视角：行号从8到1，从上到下
+            for (int row = 8; row >= 1; row--) {
+                int actualRow = row;
+                drawBoardRow(board, actualRow, isBlackView, highlightedPositions);
+            }
         }
 
         drawColumnLabels(isBlackView);
@@ -61,9 +76,11 @@ public class ChessBoardUI {
     }
 
     // Draw a single row of the board
-    private void drawBoardRow(int row, boolean isBlackView) {
+    private void drawBoardRow(ChessBoard board, int actualRow, boolean isBlackView, Set<ChessPosition> highlightedPositions) {
+
+        int displayRow = isBlackView ? 9 - actualRow : actualRow;
         // Draw left row number
-        System.out.print(SET_TEXT_COLOR_LIGHT_GREY + String.format(" %d ", row) + RESET_TEXT_COLOR);
+        System.out.print(SET_TEXT_COLOR_LIGHT_GREY + String.format(" %d ", actualRow) + RESET_TEXT_COLOR);
 
         // Draw each square in the row
         for (int col = 1; col <= 8; col++) {
@@ -71,26 +88,29 @@ public class ChessBoardUI {
             if (isBlackView) {
                 actualCol = 9 - col;
             }
-            ChessPosition position = new ChessPosition(row, actualCol);
+            ChessPosition position = new ChessPosition(actualRow, actualCol);
 
             // Set square background color
             String squareColor;
-            if ((row + actualCol) % 2 != 0) {
+            if (highlightedPositions.contains(position)) {
+                squareColor = SET_BG_COLOR_YELLOW;
+            }
+              else if ((actualRow + actualCol) % 2 != 0) {
                 squareColor = SET_BG_COLOR_WHITE;
             } else {
                 squareColor = SET_BG_COLOR_DARK_GREY;
             }
 
             // Draw piece
-            String pieceStr = getPieceSymbol(position);
+            String pieceStr = getPieceSymbol(board, position);
             System.out.print(squareColor + pieceStr + RESET_BG_COLOR);
         }
 
-        System.out.print(SET_TEXT_COLOR_LIGHT_GREY + String.format(" %d ", row) + RESET_TEXT_COLOR);
+        System.out.print(SET_TEXT_COLOR_LIGHT_GREY + String.format(" %d ", displayRow) + RESET_TEXT_COLOR);
         System.out.println();
     }
 
-    private String getPieceSymbol(ChessPosition position) {
+    private String getPieceSymbol(ChessBoard board, ChessPosition position) {
         ChessPiece piece = board.getPiece(position);
         if (piece == null) {
             return "   "; // empty square

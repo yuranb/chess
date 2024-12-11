@@ -1,6 +1,7 @@
 package facade;
 
 import chess.ChessMove;
+import com.google.gson.Gson;
 import exception.ResponseException;
 import model.AuthData;
 import model.GameData;
@@ -9,6 +10,7 @@ import ui.ServerMessageObserver;
 import ui.WebSocketCommunicator;
 import websocket.commands.MakeMoveCommand;
 import websocket.commands.UserGameCommand;
+import websocket.messages.NotificationMessage;
 
 import java.util.List;
 
@@ -47,8 +49,54 @@ public class ServerFacade {
         return httpCommunicator.listGames();
     }
 
+    public void connectAsPlayer(int gameID, String playerColor) {
+        UserGameCommand connect = new UserGameCommand(
+                UserGameCommand.CommandType.CONNECT,
+                this.authToken,
+                gameID,
+                UserGameCommand.Role.PLAYER,
+                playerColor
+        );
+        sendCommand(connect);
+    }
+
+    public void connectAsObserver(int gameID) {
+        UserGameCommand connect = new UserGameCommand(
+                UserGameCommand.CommandType.CONNECT,
+                this.authToken,
+                gameID,
+                UserGameCommand.Role.OBSERVER,
+                null
+        );
+        sendCommand(connect);
+    }
+
     public void playGame(int gameID, String playerColor) throws ResponseException {
         httpCommunicator.playGame(gameID, playerColor);
+    }
+
+    public String observeGame(int gameID) throws ResponseException {
+        // Fetch the list of games to ensure the gameID is valid
+        List<GameData> games = listGames();
+        boolean gameExists = games.stream().anyMatch(game -> game.gameID() == gameID);
+
+        if (!gameExists) {
+            throw new ResponseException(400, "Game with ID " + gameID + " not found.");
+        }
+
+        // Create a ConnectCommand with role OBSERVER
+        UserGameCommand connectCommand = new UserGameCommand(
+                UserGameCommand.CommandType.CONNECT,
+                this.authToken,
+                gameID,
+                UserGameCommand.Role.OBSERVER,
+                null // No playerColor for observers
+        );
+
+        // Send the ConnectCommand via WebSocket
+        sendCommand(connectCommand);
+
+        return "Now observing game: " + gameID;
     }
 
     public void connectWebSocket(String baseUrl, ServerMessageObserver observer) {
@@ -63,10 +111,14 @@ public class ServerFacade {
     }
 
     public void makeMove(int gameID, ChessMove move) {
-        MakeMoveCommand moveCommand = new MakeMoveCommand(authToken, gameID, move);
+        MakeMoveCommand moveCommand = new MakeMoveCommand(this.authToken, gameID, move);
         sendCommand(moveCommand);
     }
 
+    public void leaveGame(Integer gameID) {
+        UserGameCommand leave = new UserGameCommand(UserGameCommand.CommandType.LEAVE, this.authToken, gameID);
+        sendCommand(leave);
+    }
 
     public void resignGame(int gameID) {
         UserGameCommand resign = new UserGameCommand(UserGameCommand.CommandType.RESIGN, authToken, gameID);

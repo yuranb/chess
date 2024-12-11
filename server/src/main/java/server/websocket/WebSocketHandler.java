@@ -207,10 +207,14 @@ public class WebSocketHandler {
         } else if (gameData.game().isInStalemate(turn)) {
             notificationMsg = "Stalemate caused by " + username + "'s move! It's a tie!";
             gameData.game().setGameOver();
-        } else if (gameData.game().isInCheck(turn)) {
-            notificationMsg = username + " made a move, " + opponentPlayer + " is now in check!";
         } else {
-            notificationMsg = username + " made a move";
+            notificationMsg = String.format(
+                    "Player %s moved from %s to %s. (Next: %s's turn.)",
+                    username,
+                    move.getStartPosition(),
+                    move.getEndPosition(),
+                    turn
+            );
         }
 
         System.out.println("Move made: " + move + ", notification: " + notificationMsg);

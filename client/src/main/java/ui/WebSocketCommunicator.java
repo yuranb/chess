@@ -54,7 +54,6 @@ public class WebSocketCommunicator extends Endpoint {
         }
     }
 
-
     public void sendCommand(UserGameCommand command) {
         if (session != null && session.isOpen()) {
             try {

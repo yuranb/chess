@@ -63,12 +63,14 @@ public class HttpCommunicator {
     public GameData playGame(int gameID, String playerColor) throws ResponseException {
         var path = "/game";
         Map<String, Object> request = new HashMap<>();
-        request.put("gameID",gameID);
-        request.put("playerColor", playerColor);
+        request.put("gameID", gameID);
+        if (playerColor != null) {
+            request.put("playerColor", playerColor);
+        }
 
-        this.makeRequest("PUT", path, request, null);
-        return null;
+        return this.makeRequest("PUT", path, request, GameData.class);
     }
+
 
     public void clear() throws Exception {
         this.makeRequest("DELETE", "/db", null, null);

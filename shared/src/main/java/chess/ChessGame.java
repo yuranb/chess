@@ -263,7 +263,7 @@ public class ChessGame {
         return this.board;
     }
 
-    private boolean hasValidMove(TeamColor teamColor) {
+    public boolean hasValidMove(TeamColor teamColor) {
         for (int row = 1; row <= 8; row++) {
             for (int col = 1; col <= 8; col++) {
                 ChessPosition startPos = new ChessPosition(row, col);
